@@ -376,11 +376,11 @@ Future QoS condition
 
 ### Phase 2 — Traffic Generation
 
-* [ ] Implement UDP traffic
-* [ ] Implement TCP traffic
-* [ ] Run TCP and UDP simultaneously
-* [ ] Make traffic rates configurable
-* [ ] Create different load scenarios
+* [x] Implement UDP traffic
+* [x] Implement TCP traffic
+* [x] Run TCP and UDP simultaneously
+* [x] Make traffic rates configurable
+* [x] Create different load scenarios
 
 ### Phase 3 — QoS Monitoring
 
