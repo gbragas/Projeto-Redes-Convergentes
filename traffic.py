@@ -17,7 +17,7 @@ def install_traffic(topology):
         server_index = flow["server"]
         port = flow["port"]
 
-        # Validate the configured endpoints.
+        # Validate endpoint indices.
         if not 0 <= client_index < clients.GetN():
             raise ValueError(f"{name}: invalid client index")
 
@@ -25,21 +25,22 @@ def install_traffic(topology):
             raise ValueError(f"{name}: invalid server index")
 
         if protocol not in ("UDP", "TCP"):
-            raise ValueError(f"{name}: unsupported protocol {protocol}")
+            raise ValueError(f"{name}: unsupported protocol")
 
-        if port < 1 or port > 65535:
+        if not 1 <= port <= 65535:
             raise ValueError(f"{name}: invalid port")
 
         client = clients.Get(client_index)
         server = servers.Get(server_index)
         destination = server_ips[server_index]
 
-        if protocol == "UDP":
-            socket_factory = "ns3::UdpSocketFactory"
-        else:
-            socket_factory = "ns3::TcpSocketFactory"
+        socket_factory = (
+            "ns3::UdpSocketFactory"
+            if protocol == "UDP"
+            else "ns3::TcpSocketFactory"
+        )
 
-        # 1. Install the receiver (sink).
+        # 1. Install receiver.
         sink_address = ns.InetSocketAddress(
             ns.Ipv4Address.GetAny(), port
         ).ConvertTo()
@@ -52,7 +53,7 @@ def install_traffic(topology):
         sink_app.Start(ns.Seconds(1.0))
         sink_app.Stop(ns.Seconds(config.SIMULATION_TIME))
 
-        # 2. Install the sender.
+        # 2. Install sender.
         remote_address = ns.InetSocketAddress(
             destination, port
         ).ConvertTo()
@@ -92,8 +93,8 @@ def install_traffic(topology):
 
         print(
             f"{name}: Client {client_index} -> "
-            f"Server {server_index} ({protocol}, "
-            f"{flow['rate']})"
+            f"Server {server_index} "
+            f"({protocol}, {flow['rate']})"
         )
 
     return sinks

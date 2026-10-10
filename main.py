@@ -6,6 +6,11 @@ from traffic import install_traffic
 
 
 def main():
+    scenario = config.LOAD_SCENARIOS[config.ACTIVE_SCENARIO]
+
+    print(f"Load scenario: {config.ACTIVE_SCENARIO}")
+    print(scenario["description"])
+
     topology = create_topology()
     sinks = install_traffic(topology)
 
@@ -24,3 +29,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
