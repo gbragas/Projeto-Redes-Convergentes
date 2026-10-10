@@ -125,9 +125,6 @@ def create_topology():
         "clients": clients,
         "routers": routers,
         "servers": servers,
-        "client_interfaces": client_interfaces,
-        "router_interfaces": router_interfaces,
-        "server_interfaces": server_interfaces,
         "server_ips": server_ips,
     }
 

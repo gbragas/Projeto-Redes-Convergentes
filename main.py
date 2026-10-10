@@ -3,7 +3,10 @@ from ns import ns
 import config
 from topology import create_topology
 from traffic import install_traffic
-
+from monitoring import (
+    install_monitoring,
+    print_flow_statistics,
+)
 
 def main():
     scenario = config.LOAD_SCENARIOS[config.ACTIVE_SCENARIO]
@@ -14,6 +17,8 @@ def main():
     topology = create_topology()
     sinks = install_traffic(topology)
 
+    flow_monitor_helper, monitor = install_monitoring()
+
     ns.Simulator.Stop(ns.Seconds(config.SIMULATION_TIME))
     ns.Simulator.Run()
 
@@ -22,6 +27,8 @@ def main():
     for name, sink_apps in sinks.items():
         received = sink_apps.Get(0).GetTotalRx()
         print(f"{name} received: {received} bytes")
+
+    print_flow_statistics(flow_monitor_helper, monitor)
 
     print("\nSimulation finished.")
     ns.Simulator.Destroy()
