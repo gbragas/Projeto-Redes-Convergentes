@@ -1,118 +1,100 @@
+
 from ns import ns
 import config
 
 
-def install_traffic(clients, servers, server_ips):
-    # UDP uses Client 0 -> Server 0
-    udp_client = clients.Get(0)
-    udp_server = servers.Get(0)
-    udp_destination = ns.Ipv4Address(server_ips[0])
+def install_traffic(topology):
+    clients = topology["clients"]
+    servers = topology["servers"]
+    server_ips = topology["server_ips"]
 
-    # TCP uses Client 1 -> Server 1
-    tcp_client = clients.Get(1)
-    tcp_server = servers.Get(1)
-    tcp_destination = ns.Ipv4Address(server_ips[1])
+    sinks = {}
 
-    # ============================================================
-    # 1. UDP receiver
-    # ============================================================
+    for flow in config.TRAFFIC_FLOWS:
+        name = flow["name"]
+        protocol = flow["protocol"].upper()
+        client_index = flow["client"]
+        server_index = flow["server"]
+        port = flow["port"]
 
-    udp_sink_address = ns.InetSocketAddress(
-        ns.Ipv4Address.GetAny(),
-        config.UDP_PORT
-    ).ConvertTo()
+        # Validate the configured endpoints.
+        if not 0 <= client_index < clients.GetN():
+            raise ValueError(f"{name}: invalid client index")
 
-    udp_sink_helper = ns.PacketSinkHelper(
-        "ns3::UdpSocketFactory",
-        udp_sink_address
-    )
+        if not 0 <= server_index < servers.GetN():
+            raise ValueError(f"{name}: invalid server index")
 
-    udp_sink = udp_sink_helper.Install(udp_server)
-    udp_sink.Start(ns.Seconds(1.0))
-    udp_sink.Stop(ns.Seconds(config.SIMULATION_TIME))
+        if protocol not in ("UDP", "TCP"):
+            raise ValueError(f"{name}: unsupported protocol {protocol}")
 
-    # ============================================================
-    # 2. UDP sender
-    # ============================================================
+        if port < 1 or port > 65535:
+            raise ValueError(f"{name}: invalid port")
 
-    udp_remote_address = ns.InetSocketAddress(
-        udp_destination,
-        config.UDP_PORT
-    ).ConvertTo()
+        client = clients.Get(client_index)
+        server = servers.Get(server_index)
+        destination = server_ips[server_index]
 
-    udp_sender_helper = ns.OnOffHelper(
-        "ns3::UdpSocketFactory",
-        udp_remote_address
-    )
+        if protocol == "UDP":
+            socket_factory = "ns3::UdpSocketFactory"
+        else:
+            socket_factory = "ns3::TcpSocketFactory"
 
-    udp_sender_helper.SetAttribute(
-        "DataRate",
-        ns.DataRateValue(ns.DataRate(config.UDP_RATE))
-    )
-    udp_sender_helper.SetAttribute(
-        "PacketSize",
-        ns.UintegerValue(config.UDP_PACKET_SIZE)
-    )
-    udp_sender_helper.SetAttribute(
-        "OnTime",
-        ns.StringValue(
-            "ns3::ConstantRandomVariable[Constant=1]"
+        # 1. Install the receiver (sink).
+        sink_address = ns.InetSocketAddress(
+            ns.Ipv4Address.GetAny(), port
+        ).ConvertTo()
+
+        sink_helper = ns.PacketSinkHelper(
+            socket_factory, sink_address
         )
-    )
-    udp_sender_helper.SetAttribute(
-        "OffTime",
-        ns.StringValue(
-            "ns3::ConstantRandomVariable[Constant=0]"
+
+        sink_app = sink_helper.Install(server)
+        sink_app.Start(ns.Seconds(1.0))
+        sink_app.Stop(ns.Seconds(config.SIMULATION_TIME))
+
+        # 2. Install the sender.
+        remote_address = ns.InetSocketAddress(
+            destination, port
+        ).ConvertTo()
+
+        sender_helper = ns.OnOffHelper(
+            socket_factory, remote_address
         )
-    )
 
-    udp_sender = udp_sender_helper.Install(udp_client)
-    udp_sender.Start(ns.Seconds(2.0))
-    udp_sender.Stop(ns.Seconds(config.SIMULATION_TIME - 1.0))
+        sender_helper.SetAttribute(
+            "DataRate",
+            ns.DataRateValue(ns.DataRate(flow["rate"]))
+        )
+        sender_helper.SetAttribute(
+            "PacketSize",
+            ns.UintegerValue(flow["packet_size"])
+        )
+        sender_helper.SetAttribute(
+            "OnTime",
+            ns.StringValue(
+                "ns3::ConstantRandomVariable[Constant=1]"
+            )
+        )
+        sender_helper.SetAttribute(
+            "OffTime",
+            ns.StringValue(
+                "ns3::ConstantRandomVariable[Constant=0]"
+            )
+        )
 
-    # ============================================================
-    # 3. TCP receiver
-    # ============================================================
+        sender_app = sender_helper.Install(client)
+        sender_app.Start(ns.Seconds(2.0))
+        sender_app.Stop(
+            ns.Seconds(config.SIMULATION_TIME - 1.0)
+        )
 
-    tcp_sink_address = ns.InetSocketAddress(
-        ns.Ipv4Address.GetAny(),
-        config.TCP_PORT
-    ).ConvertTo()
+        sinks[name] = sink_app
 
-    tcp_sink_helper = ns.PacketSinkHelper(
-        "ns3::TcpSocketFactory",
-        tcp_sink_address
-    )
+        print(
+            f"{name}: Client {client_index} -> "
+            f"Server {server_index} ({protocol}, "
+            f"{flow['rate']})"
+        )
 
-    tcp_sink = tcp_sink_helper.Install(tcp_server)
-    tcp_sink.Start(ns.Seconds(1.0))
-    tcp_sink.Stop(ns.Seconds(config.SIMULATION_TIME))
+    return sinks
 
-    # ============================================================
-    # 4. TCP sender
-    # ============================================================
-
-    tcp_remote_address = ns.InetSocketAddress(
-        tcp_destination,
-        config.TCP_PORT
-    ).ConvertTo()
-
-    tcp_sender_helper = ns.BulkSendHelper(
-        "ns3::TcpSocketFactory",
-        tcp_remote_address
-    )
-
-    # Zero means unlimited data until the application stops.
-    tcp_sender_helper.SetAttribute(
-        "MaxBytes",
-        ns.UintegerValue(0)
-    )
-
-    tcp_sender = tcp_sender_helper.Install(tcp_client)
-    tcp_sender.Start(ns.Seconds(2.0))
-    tcp_sender.Stop(ns.Seconds(config.SIMULATION_TIME - 1.0))
-
-    print("UDP: Client 0 -> Server 0")
-    print("TCP: Client 1 -> Server 1")
-
-    return udp_sink, tcp_sink
