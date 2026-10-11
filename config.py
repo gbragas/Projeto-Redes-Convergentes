@@ -11,6 +11,7 @@ CLIENT_ROUTER_DELAY = "2ms"
 # Router 0 -> Router 1 (bottleneck)
 BOTTLENECK_RATE = "10Mbps"
 BOTTLENECK_DELAY = "20ms"
+BOTTLENECK_QUEUE_SIZE = "100p"
 
 # Router 1 -> Servers
 ROUTER_SERVER_RATE = "100Mbps"
@@ -124,7 +125,7 @@ LOAD_SCENARIOS = {
 
 
 # Change this to "low", "medium", or "high".
-ACTIVE_SCENARIO = "medium"
+ACTIVE_SCENARIO = "high"
 
 # Traffic module uses the flows from the selected scenario.
 TRAFFIC_FLOWS = LOAD_SCENARIOS[ACTIVE_SCENARIO]["flows"]

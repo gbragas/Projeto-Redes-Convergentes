@@ -2,7 +2,7 @@ from ns import ns
 import config
 
 
-def create_link(node_a, node_b, rate, delay, subnet):
+def create_link(node_a, node_b, rate, delay, subnet, queue_size=None):
 
     link = ns.PointToPointHelper()
 
@@ -15,6 +15,13 @@ def create_link(node_a, node_b, rate, delay, subnet):
         "Delay",
         ns.StringValue(delay)
     )
+
+    if queue_size is not None:
+        link.SetQueue(
+            "ns3::DropTailQueue<Packet>",
+            "MaxSize",
+            ns.StringValue(queue_size)
+        )
 
     devices = link.Install(node_a, node_b)
 
@@ -66,6 +73,7 @@ def create_topology():
     subnet_id = 1
     # 3. Connect clients to Router 0
     client_interfaces = []
+    client_ips = []
 
     for i in range(config.NUM_CLIENTS):
         subnet = f"10.1.{subnet_id}.0"
@@ -79,9 +87,11 @@ def create_topology():
         )
 
         client_interfaces.append(interfaces)
+        client_ips.append(interfaces.GetAddress(0))
         subnet_id += 1
 
 
+    
     # 4. Connect Router 0 to Router 1 (bottleneck)
     subnet = f"10.1.{subnet_id}.0"
 
@@ -90,14 +100,24 @@ def create_topology():
         router_1,
         config.BOTTLENECK_RATE,
         config.BOTTLENECK_DELAY,
-        subnet
+        subnet,
+        config.BOTTLENECK_QUEUE_SIZE
     )
+
+    # Capture both devices on the bottleneck link for queue monitoring.
+    bottleneck_devices = ns.NetDeviceContainer(
+        router_0.GetDevice(router_0.GetNDevices() - 1),
+        router_1.GetDevice(router_1.GetNDevices() - 1)
+    )
+
     subnet_id += 1
+
 
 
     # 5. Connect Router 1 to servers
     server_interfaces = []
     server_ips = []
+    
 
     for i in range(config.NUM_SERVERS):
         subnet = f"10.1.{subnet_id}.0"
@@ -125,6 +145,8 @@ def create_topology():
         "clients": clients,
         "routers": routers,
         "servers": servers,
+        "client_ips": client_ips,
         "server_ips": server_ips,
+        "bottleneck_devices": bottleneck_devices,
     }
 

@@ -7,6 +7,13 @@ from monitoring import (
     install_monitoring,
     print_flow_statistics,
 )
+from queue_monitoring import (
+    install_queue_monitoring,
+    print_queue_statistics,
+    print_queue_disc_statistics,
+    install_queue_disc_monitoring,
+    print_queue_disc_monitor_statistics,
+)
 
 def main():
     scenario = config.LOAD_SCENARIOS[config.ACTIVE_SCENARIO]
@@ -15,6 +22,10 @@ def main():
     print(scenario["description"])
 
     topology = create_topology()
+
+    queue_monitors = install_queue_monitoring(topology)
+    queue_disc_monitors = install_queue_disc_monitoring(topology)
+
     sinks = install_traffic(topology)
 
     flow_monitor_helper, monitor = install_monitoring()
@@ -28,7 +39,10 @@ def main():
         received = sink_apps.Get(0).GetTotalRx()
         print(f"{name} received: {received} bytes")
 
-    print_flow_statistics(flow_monitor_helper, monitor)
+    print_flow_statistics(flow_monitor_helper, monitor, topology)
+    print_queue_statistics(queue_monitors)
+    print_queue_disc_statistics(topology)
+    print_queue_disc_monitor_statistics(queue_disc_monitors, topology)
 
     print("\nSimulation finished.")
     ns.Simulator.Destroy()

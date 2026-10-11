@@ -1,4 +1,3 @@
-
 from ns import ns
 
 
@@ -9,59 +8,85 @@ def install_monitoring():
     return flow_monitor_helper, monitor
 
 
-def print_flow_statistics(flow_monitor_helper, monitor):
-    # Ask FlowMonitor to identify packets that were not received.
+def print_flow_statistics(flow_monitor_helper, monitor, topology):
     monitor.CheckForLostPackets()
 
     classifier = flow_monitor_helper.GetClassifier()
     flow_stats = monitor.GetFlowStats()
 
-    print("\n--- FlowMonitor QoS Statistics ---")
+    # Map IP addresses to their node roles.
+    node_names = {}
+
+    for i in range(topology["clients"].GetN()):
+        ip = str(topology["client_ips"][i])
+        node_names[ip] = f"Client {i}"
+
+    for i, ip_address in enumerate(topology["server_ips"]):
+        node_names[str(ip_address)] = f"Server {i}"
+
+    print("\n" + "=" * 120)
+    print("FLOWMONITOR — QoS STATISTICS")
+    print("=" * 120)
+
+    header = (
+        f"{'ID':<4} {'Flow':<38} "
+        f"{'Tx':>7} {'Rx':>7} {'Lost':>7} "
+        f"{'Throughput':>15} {'Delay':>14} {'Jitter':>14}"
+    )
+    print(header)
+    print("-" * len(header))
 
     for flow_id, stats in flow_stats:
-        # Ignore flows that did not deliver any packets.
-        if stats.rxPackets == 0:
-            print(f"\nFlow {flow_id}: no packets received")
-            continue
-
         flow = classifier.FindFlow(flow_id)
 
-        # Throughput in bits per second.
-        duration = (
-            stats.timeLastRxPacket.GetSeconds()
-            - stats.timeFirstRxPacket.GetSeconds()
-        )
+        src_ip = str(flow.sourceAddress)
+        dst_ip = str(flow.destinationAddress)
 
-        throughput = (
-            stats.rxBytes * 8 / duration
-            if duration > 0
+        src_name = node_names.get(src_ip, src_ip)
+        dst_name = node_names.get(dst_ip, dst_ip)
+
+        protocol_number = int(flow.protocol)
+
+        if protocol_number == 6:
+            protocol = "TCP"
+        elif protocol_number == 17:
+            protocol = "UDP"
+        else:
+            protocol = f"Protocol {protocol_number}"
+
+        label = f"{protocol} | {src_name} -> {dst_name}"
+
+        # Throughput is calculated over the first-to-last received packet.
+        first_rx = stats.timeFirstRxPacket.GetSeconds()
+        last_rx = stats.timeLastRxPacket.GetSeconds()
+        duration = last_rx - first_rx
+
+        throughput_mbps = (
+            stats.rxBytes * 8.0 / duration / 1_000_000
+            if stats.rxPackets > 0 and duration > 0
             else 0.0
         )
 
-        # Average end-to-end packet delay.
-        average_delay = (
-            stats.delaySum.GetSeconds() / stats.rxPackets
+        avg_delay_ms = (
+            stats.delaySum.GetSeconds() * 1000.0 / stats.rxPackets
+            if stats.rxPackets > 0
+            else 0.0
         )
 
-        # Average jitter between consecutive received packets.
-        average_jitter = (
-            stats.jitterSum.GetSeconds() / (stats.rxPackets - 1)
+        avg_jitter_ms = (
+            stats.jitterSum.GetSeconds() * 1000.0 / (stats.rxPackets - 1)
             if stats.rxPackets > 1
             else 0.0
         )
 
-        print(f"\nFlow ID: {flow_id}")
         print(
-            f"  Source:      "
-            f"{flow.sourceAddress}:{flow.sourcePort}"
+            f"{flow_id:<4} {label:<38} "
+            f"{stats.txPackets:>7} {stats.rxPackets:>7} "
+            f"{stats.lostPackets:>7} "
+            f"{throughput_mbps:>11.3f} Mbps "
+            f"{avg_delay_ms:>10.3f} ms "
+            f"{avg_jitter_ms:>10.3f} ms"
         )
-        print(
-            f"  Destination: "
-            f"{flow.destinationAddress}:{flow.destinationPort}"
-        )
-        print(f"  Tx packets:  {stats.txPackets}")
-        print(f"  Rx packets:  {stats.rxPackets}")
-        print(f"  Lost packets: {stats.lostPackets}")
-        print(f"  Throughput:  {throughput / 1e6:.3f} Mbps")
-        print(f"  Avg delay:   {average_delay * 1000:.3f} ms")
-        print(f"  Avg jitter:  {average_jitter * 1000:.3f} ms")
+
+    print("=" * 120)
+    print("Throughput: Mbps | Delay and jitter: milliseconds")
