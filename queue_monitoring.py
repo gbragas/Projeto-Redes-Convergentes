@@ -4,6 +4,7 @@ from ns import ns
 
 # C++ callbacks track device-queue and QueueDisc events.
 ns.cppyy.cppdef("""
+#include <string>
 #include <algorithm>
 #include <cstdint>
 #include <map>
@@ -14,6 +15,9 @@ ns.cppyy.cppdef("""
 #include "ns3/queue.h"
 #include "ns3/queue-disc.h"
 #include "ns3/traffic-control-layer.h"
+
+#include "ns3/simulator.h"
+#include <iostream>
 
 using namespace ns3;
 
@@ -30,19 +34,31 @@ struct QueueMonitorState
     uint64_t dequeues = 0;
     uint64_t drops = 0;
     uint64_t unmatchedDequeues = 0;
+    double totalDelaySeconds = 0.0;
+    double maxDelaySeconds = 0.0;
+    uint64_t measuredPackets = 0;   
 };
+
+static std::map<uint32_t, std::map<std::string, uint64_t>>
+    g_queueDiscDropReasons;
 
 static std::map<uint32_t, QueueMonitorState> g_queueMonitors;
 
+static std::map<uint32_t,
+    std::map<uint64_t, std::deque<double>>> g_queueEnqueueTimes;
 
 void DeviceQueueEnqueue(uint32_t id, Ptr<const Packet> packet)
 {
     auto& state = g_queueMonitors[id];
+
     ++state.enqueues;
     ++state.currentPackets;
 
     state.peakPackets =
         std::max(state.peakPackets, state.currentPackets);
+
+    g_queueEnqueueTimes[id][packet->GetUid()]
+        .push_back(Simulator::Now().GetSeconds());
 }
 
 
@@ -55,6 +71,25 @@ void DeviceQueueDequeue(uint32_t id, Ptr<const Packet> packet)
         --state.currentPackets;
     else
         ++state.unmatchedDequeues;
+
+    auto& times = g_queueEnqueueTimes[id][packet->GetUid()];
+
+    if (!times.empty())
+    {
+        double enqueueTime = times.front();
+        times.pop_front();
+
+        double delay =
+            Simulator::Now().GetSeconds() - enqueueTime;
+
+        if (delay >= 0.0)
+        {
+            state.totalDelaySeconds += delay;
+            state.maxDelaySeconds =
+                std::max(state.maxDelaySeconds, delay);
+            ++state.measuredPackets;
+        }
+    }
 }
 
 
@@ -65,12 +100,27 @@ void DeviceQueueDrop(uint32_t id, Ptr<const Packet> packet)
 
     if (state.currentPackets > 0)
         --state.currentPackets;
+
+    auto& times = g_queueEnqueueTimes[id][packet->GetUid()];
+
+    if (!times.empty())
+        times.pop_front();
 }
 
 
 // ============================================================
 // QueueDisc monitoring
 // ============================================================
+
+struct QueueDiscSojournState
+{
+    double totalSeconds = 0.0;
+    double maxSeconds = 0.0;
+    uint64_t samples = 0;
+};
+
+static std::map<uint32_t, QueueDiscSojournState>
+    g_queueDiscSojourn;
 
 struct QueueDiscMonitorState
 {
@@ -85,14 +135,32 @@ struct QueueDiscMonitorState
     uint64_t dropsBeforeEnqueue = 0;
     uint64_t dropsAfterDequeue = 0;
     uint64_t unmatchedDequeues = 0;
+
+    double totalDelaySeconds = 0.0;
+    double maxDelaySeconds = 0.0;
+    uint64_t measuredPackets = 0;
 };
 
 static std::map<uint32_t, QueueDiscMonitorState> g_queueDiscMonitors;
 
+void QueueDiscSojournTime(uint32_t id, Time sojourn)
+{
+    auto& state = g_queueDiscSojourn[id];
+
+    double seconds = sojourn.GetSeconds();
+
+    if (seconds < 0.0)
+        return;
+
+    state.totalSeconds += seconds;
+    state.maxSeconds = std::max(state.maxSeconds, seconds);
+    ++state.samples;
+}
 
 void QueueDiscEnqueue(uint32_t id, Ptr<const QueueDiscItem> item)
 {
     auto& state = g_queueDiscMonitors[id];
+
     ++state.enqueues;
     ++state.currentPackets;
     state.currentBytes += item->GetSize();
@@ -102,7 +170,9 @@ void QueueDiscEnqueue(uint32_t id, Ptr<const QueueDiscItem> item)
 }
 
 
-void QueueDiscDequeue(uint32_t id, Ptr<const QueueDiscItem> item)
+void QueueDiscDequeue(
+    uint32_t id,
+    Ptr<const QueueDiscItem> item)
 {
     auto& state = g_queueDiscMonitors[id];
     ++state.dequeues;
@@ -112,19 +182,35 @@ void QueueDiscDequeue(uint32_t id, Ptr<const QueueDiscItem> item)
     else
         ++state.unmatchedDequeues;
 
-    const uint64_t size = item->GetSize();
+    uint64_t size = item->GetSize();
 
     if (state.currentBytes >= size)
         state.currentBytes -= size;
     else
         state.currentBytes = 0;
+
+    // Custom measurement using the QueueDisc item's own enqueue timestamp.
+    double enqueueTime = item->GetTimeStamp().GetSeconds();
+    double delay = Simulator::Now().GetSeconds() - enqueueTime;
+
+    if (delay >= 0.0)
+    {
+        state.totalDelaySeconds += delay;
+        state.maxDelaySeconds =
+            std::max(state.maxDelaySeconds, delay);
+        ++state.measuredPackets;
+    }
 }
 
 
-void QueueDiscRequeue(uint32_t id, Ptr<const QueueDiscItem> item)
+
+void QueueDiscRequeue(
+    uint32_t id,
+    Ptr<const QueueDiscItem> item)
 {
     ++g_queueDiscMonitors[id].requeues;
 }
+
 
 
 void QueueDiscDrop(uint32_t id, Ptr<const QueueDiscItem> item)
@@ -139,7 +225,11 @@ void QueueDiscDropBeforeEnqueue(
     const char* reason)
 {
     ++g_queueDiscMonitors[id].dropsBeforeEnqueue;
+    ++g_queueDiscDropReasons[id][
+        reason ? reason : "Unknown"
+    ];
 }
+
 
 
 void QueueDiscDropAfterDequeue(
@@ -148,13 +238,30 @@ void QueueDiscDropAfterDequeue(
     const char* reason)
 {
     ++g_queueDiscMonitors[id].dropsAfterDequeue;
+    ++g_queueDiscDropReasons[id][
+        reason ? reason : "Unknown"
+    ];
 }
 
+void PrintQueueDiscDropReasons(uint32_t id)
+{
+    for (const auto& entry : g_queueDiscDropReasons[id])
+    {
+        std::cout << "  " << entry.first
+                  << ": " << entry.second << std::endl;
+    }
+}
 
 // ============================================================
 // Callback factories
 // Bind each monitor ID in C++ before exposing the callback.
 // ============================================================
+
+Callback<void, Time>
+MakeQueueDiscSojournCallback(uint32_t id)
+{
+    return MakeBoundCallback(&QueueDiscSojournTime, id);
+}
 
 Callback<void, Ptr<const Packet>>
 MakeDeviceQueueEnqueueCallback(uint32_t id)
@@ -240,9 +347,96 @@ Ptr<QueueDisc> GetRootQueueDiscForPython(Ptr<NetDevice> device)
 }
 
 
+template <typename DropMap>
+void PrintDropReasonMap(
+    const DropMap& reasons,
+    const std::string& stage)
+{
+    bool found = false;
+
+    for (const auto& entry : reasons)
+    {
+        if (entry.second == 0)
+            continue;
+
+        if (!found)
+        {
+            std::cout << "  " << stage << ":\\n";
+            found = true;
+        }
+
+        std::cout << "    " << entry.first
+                  << ": " << entry.second << "\\n";
+    }
+
+    if (!found)
+    {
+        std::cout << "  " << stage << ": none\\n";
+    }
+}
+
+
+void PrintQueueDiscDropStats(
+    Ptr<QueueDisc> queueDisc,
+    const std::string& path)
+{
+    if (!queueDisc)
+        return;
+
+    const auto& stats = queueDisc->GetStats();
+
+    std::cout << "\\n" << path << ": "
+              << queueDisc->GetInstanceTypeId().GetName()
+              << "\\n";
+
+    PrintDropReasonMap(
+        stats.nDroppedPacketsBeforeEnqueue,
+        "Drops before enqueue");
+
+    PrintDropReasonMap(
+        stats.nDroppedPacketsAfterDequeue,
+        "Drops after dequeue");
+
+    for (uint32_t i = 0;
+         i < queueDisc->GetNQueueDiscClasses();
+         ++i)
+    {
+        Ptr<QueueDiscClass> queueClass =
+            queueDisc->GetQueueDiscClass(i);
+
+        if (queueClass)
+        {
+            PrintQueueDiscDropStats(
+                queueClass->GetQueueDisc(),
+                path + "/class[" + std::to_string(i) + "]");
+        }
+    }
+}
+
+
 // ============================================================
 // Statistics accessors
 // ============================================================
+
+double GetQueueDiscBuiltinAverageDelayMs(uint32_t id)
+{
+    const auto& state = g_queueDiscSojourn[id];
+
+    if (state.samples == 0)
+        return 0.0;
+
+    return state.totalSeconds * 1000.0 / state.samples;
+}
+
+double GetQueueDiscBuiltinMaxDelayMs(uint32_t id)
+{
+    return g_queueDiscSojourn[id].maxSeconds * 1000.0;
+}
+
+uint64_t GetQueueDiscBuiltinSamples(uint32_t id)
+{
+    return g_queueDiscSojourn[id].samples;
+}
 
 uint64_t GetQueueCurrent(uint32_t id)
 {
@@ -323,6 +517,49 @@ uint64_t GetQueueDiscDropsAfterDequeue(uint32_t id)
 uint64_t GetQueueDiscUnmatchedDequeues(uint32_t id)
 {
     return g_queueDiscMonitors[id].unmatchedDequeues;
+}
+
+double GetQueueAverageDelayMs(uint32_t id)
+{
+    const auto& state = g_queueMonitors[id];
+
+    if (state.measuredPackets == 0)
+        return 0.0;
+
+    return state.totalDelaySeconds * 1000.0
+        / state.measuredPackets;
+}
+
+double GetQueueMaxDelayMs(uint32_t id)
+{
+    return g_queueMonitors[id].maxDelaySeconds * 1000.0;
+}
+
+uint64_t GetQueueMeasuredPackets(uint32_t id)
+{
+    return g_queueMonitors[id].measuredPackets;
+}
+
+
+double GetQueueDiscAverageDelayMs(uint32_t id)
+{
+    const auto& state = g_queueDiscMonitors[id];
+
+    if (state.measuredPackets == 0)
+        return 0.0;
+
+    return state.totalDelaySeconds * 1000.0
+        / state.measuredPackets;
+}
+
+double GetQueueDiscMaxDelayMs(uint32_t id)
+{
+    return g_queueDiscMonitors[id].maxDelaySeconds * 1000.0;
+}
+
+uint64_t GetQueueDiscMeasuredPackets(uint32_t id)
+{
+    return g_queueDiscMonitors[id].measuredPackets;
 }
 """)
 
@@ -414,12 +651,7 @@ def _get_link_label(device, topology):
     return f"{source} -> {destination}"
 
 
-
-
-# ============================================================
 # Install device-queue monitoring
-# ============================================================
-
 def install_queue_monitoring(topology):
     cpp = _get_cpp()
     devices = _get_bottleneck_devices(topology)
@@ -455,10 +687,7 @@ def install_queue_monitoring(topology):
     return topology
 
 
-# ============================================================
 # Install QueueDisc monitoring
-# ============================================================
-
 def install_queue_disc_monitoring(topology):
     cpp = _get_cpp()
     devices = _get_bottleneck_devices(topology)
@@ -483,6 +712,7 @@ def install_queue_disc_monitoring(topology):
                 cpp.MakeQueueDiscDropBeforeEnqueueCallback(index),
             "DropAfterDequeue":
                 cpp.MakeQueueDiscDropAfterDequeueCallback(index),
+            "SojournTime": cpp.MakeQueueDiscSojournCallback(index),
         }
 
         connected = [
@@ -498,10 +728,7 @@ def install_queue_disc_monitoring(topology):
     return topology
 
 
-# ============================================================
 # Print device-queue statistics
-# ============================================================
-
 def print_queue_statistics(queue_monitors):
     cpp = _get_cpp()
     devices = _get_bottleneck_devices(queue_monitors)
@@ -529,6 +756,9 @@ def print_queue_statistics(queue_monitors):
         dequeues = int(cpp.GetQueueDequeues(index))
         drops = int(cpp.GetQueueDrops(index))
         unmatched = int(cpp.GetQueueUnmatchedDequeues(index))
+        avg_delay = float(cpp.GetQueueAverageDelayMs(index))
+        max_delay = float(cpp.GetQueueMaxDelayMs(index))
+        measured = int(cpp.GetQueueMeasuredPackets(index))
 
         try:
             ns3_current = int(queue.GetNPackets())
@@ -553,15 +783,15 @@ def print_queue_statistics(queue_monitors):
         print(f"Enqueue events:            {enqueues}")
         print(f"Dequeue events:            {dequeues}")
         print(f"Drop events:               {drops}")
+        print(f"Measured delay samples:   {measured}")
+        print(f"Average queue delay:      {avg_delay:.3f} ms")
+        print(f"Maximum queue delay:      {max_delay:.3f} ms")
         print(f"ns-3 total drops:          {ns3_drops}")
         print(f"Unmatched dequeues:        {unmatched}")
         print(f"Occupancy consistent:      {consistent}")
+        
 
-
-# ============================================================
 # Print QueueDisc status
-# ============================================================
-
 def print_queue_disc_statistics(topology):
     cpp = _get_cpp()
     devices = _get_bottleneck_devices(topology)
@@ -601,11 +831,7 @@ def print_queue_disc_statistics(topology):
         print(f"Peak occupancy:           {peak} packets")
 
 
-# ============================================================
 # Print QueueDisc event statistics
-# ============================================================
-
-
 def print_queue_disc_monitor_statistics(queue_disc_monitors, topology):
     cpp = _get_cpp()
     devices = _get_bottleneck_devices(queue_disc_monitors)
@@ -630,6 +856,20 @@ def print_queue_disc_monitor_statistics(queue_disc_monitors, topology):
 
         tracked_current = int(cpp.GetQueueDiscCurrent(index))
         tracked_bytes = int(cpp.GetQueueDiscCurrentBytes(index))
+
+        avg_delay = float(cpp.GetQueueDiscAverageDelayMs(index))
+        max_delay = float(cpp.GetQueueDiscMaxDelayMs(index))
+        measured = int(cpp.GetQueueDiscMeasuredPackets(index))
+
+        builtin_avg = float(
+            cpp.GetQueueDiscBuiltinAverageDelayMs(index)
+        )
+        builtin_max = float(
+            cpp.GetQueueDiscBuiltinMaxDelayMs(index)
+        )
+        builtin_samples = int(
+            cpp.GetQueueDiscBuiltinSamples(index)
+        )
 
         # Compare the monitor's final state with ns-3's QueueDisc.
         try:
@@ -669,5 +909,51 @@ def print_queue_disc_monitor_statistics(queue_disc_monitors, topology):
         print(f"Actual queued bytes:       {actual_bytes} bytes")
         print(f"Bytes match ns-3:          {bytes_match}")
         print(f"Internal accounting:       {consistent}")
+        print("CUSTOM DELAY MEASUREMENTS")
+        print(f"Samples:                  {measured}")
+        print(f"Average delay:            {avg_delay:.3f} ms")
+        print(f"Maximum delay:            {max_delay:.3f} ms")
+
+        print("NS-3 BUILT-IN SOJOURN TIME")
+        print(f"Samples:                  {builtin_samples}")
+        print(f"Average delay:            {builtin_avg:.3f} ms")
+        print(f"Maximum delay:            {builtin_max:.3f} ms")
+
+        print("DELAY VALIDATION")
+        print(f"Sample counts match:      {measured == builtin_samples}")
+        print(
+            f"Average matches:          "
+            f"{abs(avg_delay - builtin_avg) < 0.001}"
+        )
+        print(
+            f"Maximum matches:          "
+            f"{abs(max_delay - builtin_max) < 0.001}"
+        )
+
+
+
+def print_queue_disc_drop_reasons(topology):
+    cpp = _get_cpp()
+    devices = _get_bottleneck_devices(topology)
+
+    print("\n" + "=" * 64)
+    print("QUEUE DISC DROP SUMMARY")
+    print("=" * 64)
+    print("Note: child drops are included in the root's aggregate.")
+    print("Do not add root and child counts together.")
+
+    for index in range(devices.GetN()):
+        device = devices.Get(index)
+        label = _get_link_label(device, topology)
+        queue_disc = _get_queue_disc(device)
+
+        print(f"\n{label}")
+        print("-" * 64)
+
+        if queue_disc is None:
+            print("No root QueueDisc found.")
+            continue
+
+        cpp.PrintQueueDiscDropStats(queue_disc, "root")
 
 

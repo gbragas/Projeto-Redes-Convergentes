@@ -13,6 +13,7 @@ from queue_monitoring import (
     print_queue_disc_statistics,
     install_queue_disc_monitoring,
     print_queue_disc_monitor_statistics,
+    print_queue_disc_drop_reasons,
 )
 
 def main():
@@ -43,6 +44,7 @@ def main():
     print_queue_statistics(queue_monitors)
     print_queue_disc_statistics(topology)
     print_queue_disc_monitor_statistics(queue_disc_monitors, topology)
+    print_queue_disc_drop_reasons(topology)
 
     print("\nSimulation finished.")
     ns.Simulator.Destroy()
