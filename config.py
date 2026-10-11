@@ -20,6 +20,7 @@ ROUTER_SERVER_DELAY = "2ms"
 
 # Simulation configuration
 SIMULATION_TIME = 10.0
+DRAIN_TIME = 2.0
 
 # Traffic load scenarios
 LOAD_SCENARIOS = {

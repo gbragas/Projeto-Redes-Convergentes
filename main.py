@@ -30,7 +30,7 @@ def main():
 
     flow_monitor_helper, monitor = install_monitoring()
 
-    ns.Simulator.Stop(ns.Seconds(config.SIMULATION_TIME))
+    ns.Simulator.Stop(ns.Seconds(config.SIMULATION_TIME + config.DRAIN_TIME))
     ns.Simulator.Run()
 
     print("\n--- Simulation Results ---")

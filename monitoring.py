@@ -79,6 +79,7 @@ def print_flow_statistics(flow_monitor_helper, monitor, topology):
             else 0.0
         )
 
+        calculated_lost = stats.txPackets - stats.rxPackets
         print(
             f"{flow_id:<4} {label:<38} "
             f"{stats.txPackets:>7} {stats.rxPackets:>7} "
@@ -87,6 +88,12 @@ def print_flow_statistics(flow_monitor_helper, monitor, topology):
             f"{avg_delay_ms:>10.3f} ms "
             f"{avg_jitter_ms:>10.3f} ms"
         )
+
+        if stats.lostPackets != calculated_lost:
+            print(
+                f"     WARNING: FlowMonitor Lost={stats.lostPackets}, "
+                f"Tx-Rx={calculated_lost}"
+            )
 
     print("=" * 120)
     print("Throughput: Mbps | Delay and jitter: milliseconds")
