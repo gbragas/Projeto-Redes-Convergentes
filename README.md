@@ -384,13 +384,13 @@ Future QoS condition
 
 ### Phase 3 — QoS Monitoring
 
-* [ ] Add FlowMonitor
-* [ ] Measure throughput
-* [ ] Measure packet loss
-* [ ] Measure delay
-* [ ] Measure jitter
-* [ ] Monitor bottleneck queue
-* [ ] Monitor queue delay
+* [x] Add FlowMonitor
+* [x] Measure throughput
+* [x] Measure packet loss
+* [x] Measure delay
+* [x] Measure jitter
+* [x] Monitor bottleneck queue
+* [x] Monitor queue delay
 
 ### Phase 4 — Dataset Generation
 
