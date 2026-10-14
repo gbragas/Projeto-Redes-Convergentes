@@ -1,21 +1,21 @@
 
 # Topology configuration
-NUM_CLIENTS = 3
-NUM_ROUTERS = 2
-NUM_SERVERS = 2
+# Each link is a tuple: (node_a, node_b, data_rate, delay, queue_size)
+#   queue_size: e.g. "100p", or None to keep the default queue.
+# Node names: client<N>, router<N>, server<N>, where N starts at 0 and
+# has no gaps. The number of nodes of each type is derived from LINKS.
+LINKS = [
+    ("client0", "router0", "100Mbps", "2ms", None),
+    ("client1", "router0", "100Mbps", "2ms", None),
+    ("client2", "router0", "100Mbps", "2ms", None),
+    ("router0", "router1", "10Mbps", "20ms", "100p"),
+    ("router1", "server0", "100Mbps", "2ms", None),
+    ("router1", "server1", "100Mbps", "2ms", None),
+]
 
-# Client -> Router 0
-CLIENT_ROUTER_RATE = "100Mbps"
-CLIENT_ROUTER_DELAY = "2ms"
-
-# Router 0 -> Router 1 (bottleneck)
-BOTTLENECK_RATE = "10Mbps"
-BOTTLENECK_DELAY = "20ms"
-BOTTLENECK_QUEUE_SIZE = "100p"
-
-# Router 1 -> Servers
-ROUTER_SERVER_RATE = "100Mbps"
-ROUTER_SERVER_DELAY = "2ms"
+# Bottleneck link, as a pair of node names in any order.
+# It must match one of the links in LINKS.
+BOTTLENECK_LINK = ("router0", "router1")
 
 
 # Simulation configuration

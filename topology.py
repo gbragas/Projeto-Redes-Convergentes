@@ -2,6 +2,21 @@ from ns import ns
 import config
 
 
+ROLES = ("client", "router", "server")
+
+
+def parse_node_name(name):
+    for role in ROLES:
+        suffix = name[len(role):]
+        if name.startswith(role) and suffix.isdigit():
+            return role, int(suffix)
+
+    raise ValueError(
+        f"Invalid node name '{name}'. "
+        "Use client<N>, router<N> or server<N>."
+    )
+
+
 def create_link(node_a, node_b, rate, delay, subnet, queue_size=None):
 
     link = ns.PointToPointHelper()
@@ -33,120 +48,133 @@ def create_link(node_a, node_b, rate, delay, subnet, queue_size=None):
 
     interfaces = address.Assign(devices)
 
-    return interfaces
+    return devices, interfaces
 
 
-def create_topology():
+def validate_topology(links):
+    if not links:
+        raise ValueError("LINKS must contain at least one link.")
 
-    # 1. Creating nodes for this especific type of topology
-    if config.NUM_ROUTERS != 2:
-        raise ValueError("This topology requires exactly 2 routers.")
+    seen_links = set()
+    indices = {role: set() for role in ROLES}
 
-    if config.NUM_CLIENTS < 1 or config.NUM_SERVERS < 1:
+    for node_a, node_b, *_ in links:
+        if node_a == node_b:
+            raise ValueError(f"Link connects '{node_a}' to itself.")
+
+        link_key = frozenset((node_a, node_b))
+        if link_key in seen_links:
+            raise ValueError(
+                f"Duplicate link between '{node_a}' and '{node_b}'."
+            )
+        seen_links.add(link_key)
+
+        for name in (node_a, node_b):
+            role, index = parse_node_name(name)
+            indices[role].add(index)
+
+    for role in ROLES:
+        if indices[role] != set(range(len(indices[role]))):
+            raise ValueError(
+                f"{role} node numbers must start at 0 and have no gaps."
+            )
+
+    if not indices["client"] or not indices["server"]:
         raise ValueError(
             "At least one client and one server are required."
         )
 
-    clients = ns.NodeContainer()
-    clients.Create(config.NUM_CLIENTS)
+    if frozenset(config.BOTTLENECK_LINK) not in seen_links:
+        raise ValueError(
+            f"BOTTLENECK_LINK {config.BOTTLENECK_LINK} "
+            "is not a link in LINKS."
+        )
 
-    routers = ns.NodeContainer()
-    routers.Create(config.NUM_ROUTERS)
+    # One /24 subnet per link, from 10.1.1.0 to 10.1.254.0.
+    if len(links) > 254:
+        raise ValueError(
+            f"The topology has {len(links)} links, but the address "
+            "plan supports at most 254."
+        )
 
-    servers = ns.NodeContainer()
-    servers.Create(config.NUM_SERVERS)
+
+def create_topology():
+
+    # 1. Validate the link list and create one node per name
+    links = config.LINKS
+    validate_topology(links)
+
+    counts = {role: 0 for role in ROLES}
+    for node_a, node_b, *_ in links:
+        for name in (node_a, node_b):
+            role, index = parse_node_name(name)
+            counts[role] = max(counts[role], index + 1)
+
+    containers = {}
+    for role in ROLES:
+        containers[role] = ns.NodeContainer()
+        containers[role].Create(counts[role])
+
+    nodes = {}
+    for role in ROLES:
+        for index in range(counts[role]):
+            nodes[f"{role}{index}"] = containers[role].Get(index)
 
 
     # 2. Install the Internet stack
     all_nodes = ns.NodeContainer()
-    all_nodes.Add(clients)
-    all_nodes.Add(routers)
-    all_nodes.Add(servers)
+    for role in ROLES:
+        all_nodes.Add(containers[role])
 
     internet = ns.InternetStackHelper()
     internet.Install(all_nodes)
 
-    router_0 = routers.Get(0)
-    router_1 = routers.Get(1)
 
+    # 3. Connect the nodes, one subnet per link
+    bottleneck = frozenset(config.BOTTLENECK_LINK)
+    bottleneck_devices = None
+    node_ips = {}
 
     subnet_id = 1
-    # 3. Connect clients to Router 0
-    client_interfaces = []
-    client_ips = []
 
-    for i in range(config.NUM_CLIENTS):
+    for node_a, node_b, rate, delay, queue_size in links:
         subnet = f"10.1.{subnet_id}.0"
 
-        interfaces = create_link(
-            clients.Get(i),
-            router_0,
-            config.CLIENT_ROUTER_RATE,
-            config.CLIENT_ROUTER_DELAY,
-            subnet
+        devices, interfaces = create_link(
+            nodes[node_a],
+            nodes[node_b],
+            rate,
+            delay,
+            subnet,
+            queue_size
         )
 
-        client_interfaces.append(interfaces)
-        client_ips.append(interfaces.GetAddress(0))
-        subnet_id += 1
+        # Interface 0 belongs to node_a and interface 1 to node_b.
+        # A node with several links keeps the address of its first link.
+        node_ips.setdefault(node_a, interfaces.GetAddress(0))
+        node_ips.setdefault(node_b, interfaces.GetAddress(1))
 
-
-    
-    # 4. Connect Router 0 to Router 1 (bottleneck)
-    subnet = f"10.1.{subnet_id}.0"
-
-    router_interfaces = create_link(
-        router_0,
-        router_1,
-        config.BOTTLENECK_RATE,
-        config.BOTTLENECK_DELAY,
-        subnet,
-        config.BOTTLENECK_QUEUE_SIZE
-    )
-
-    # Capture both devices on the bottleneck link for queue monitoring.
-    bottleneck_devices = ns.NetDeviceContainer(
-        router_0.GetDevice(router_0.GetNDevices() - 1),
-        router_1.GetDevice(router_1.GetNDevices() - 1)
-    )
-
-    subnet_id += 1
-
-
-
-    # 5. Connect Router 1 to servers
-    server_interfaces = []
-    server_ips = []
-    
-
-    for i in range(config.NUM_SERVERS):
-        subnet = f"10.1.{subnet_id}.0"
-
-        interfaces = create_link(
-            router_1,
-            servers.Get(i),
-            config.ROUTER_SERVER_RATE,
-            config.ROUTER_SERVER_DELAY,
-            subnet
-        )
-
-        server_interfaces.append(interfaces)
-        server_ips.append(interfaces.GetAddress(1))
+        # Keep both devices on the bottleneck link for queue monitoring.
+        if frozenset((node_a, node_b)) == bottleneck:
+            bottleneck_devices = devices
 
         subnet_id += 1
 
 
-    # 6. Configure routing
+    # 4. Configure routing
     ns.Ipv4GlobalRoutingHelper.PopulateRoutingTables()
 
     print("Topology created successfully.")
 
     return {
-        "clients": clients,
-        "routers": routers,
-        "servers": servers,
-        "client_ips": client_ips,
-        "server_ips": server_ips,
+        "clients": containers["client"],
+        "routers": containers["router"],
+        "servers": containers["server"],
+        "client_ips": [
+            node_ips[f"client{i}"] for i in range(counts["client"])
+        ],
+        "server_ips": [
+            node_ips[f"server{i}"] for i in range(counts["server"])
+        ],
         "bottleneck_devices": bottleneck_devices,
     }
-
