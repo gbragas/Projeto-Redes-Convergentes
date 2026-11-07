@@ -1,3 +1,5 @@
+# Change this to "low", "medium", or "high".
+ACTIVE_SCENARIO = "low"
 
 # Topology configuration
 NUM_CLIENTS = 3
@@ -54,6 +56,15 @@ LOAD_SCENARIOS = {
                 "rate": "2Mbps",
                 "packet_size": 512,
             },
+            {
+                "name": "TCP_2",
+                "protocol": "TCP",
+                "client": 0,
+                "server": 1,
+                "port": 9003,
+                "rate": "1Mbps",
+                "packet_size": 1024,
+            },
         ],
     },
 
@@ -86,6 +97,15 @@ LOAD_SCENARIOS = {
                 "port": 9002,
                 "rate": "2Mbps",
                 "packet_size": 512,
+            },
+            {
+                "name": "TCP_2",
+                "protocol": "TCP",
+                "client": 0,
+                "server": 1,
+                "port": 9003,
+                "rate": "2Mbps",
+                "packet_size": 1024,
             },
         ],
     },
@@ -120,13 +140,19 @@ LOAD_SCENARIOS = {
                 "rate": "2Mbps",
                 "packet_size": 512,
             },
+            {
+                "name": "TCP_2",
+                "protocol": "TCP",
+                "client": 0,
+                "server": 1,
+                "port": 9003,
+                "rate": "4Mbps",
+                "packet_size": 1024,
+            },
         ],
     },
 }
 
-
-# Change this to "low", "medium", or "high".
-ACTIVE_SCENARIO = "high"
 
 # Traffic module uses the flows from the selected scenario.
 TRAFFIC_FLOWS = LOAD_SCENARIOS[ACTIVE_SCENARIO]["flows"]

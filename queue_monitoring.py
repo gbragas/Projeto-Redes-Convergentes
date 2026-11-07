@@ -306,10 +306,6 @@ def print_queue_disc_monitor_statistics(queue_disc_monitors, topology):
         tracked_current = int(cpp.GetQueueDiscCurrent(index))
         tracked_bytes = int(cpp.GetQueueDiscCurrentBytes(index))
 
-        avg_delay = float(cpp.GetQueueDiscAverageDelayMs(index))
-        max_delay = float(cpp.GetQueueDiscMaxDelayMs(index))
-        measured = int(cpp.GetQueueDiscMeasuredPackets(index))
-
         builtin_avg = float(
             cpp.GetQueueDiscBuiltinAverageDelayMs(index)
         )
@@ -358,27 +354,11 @@ def print_queue_disc_monitor_statistics(queue_disc_monitors, topology):
         print(f"Actual queued bytes:       {actual_bytes} bytes")
         print(f"Bytes match ns-3:          {bytes_match}")
         print(f"Internal accounting:       {consistent}")
-        print("CUSTOM DELAY MEASUREMENTS")
-        print(f"Samples:                  {measured}")
-        print(f"Average delay:            {avg_delay:.3f} ms")
-        print(f"Maximum delay:            {max_delay:.3f} ms")
 
         print("NS-3 BUILT-IN SOJOURN TIME")
         print(f"Samples:                  {builtin_samples}")
         print(f"Average delay:            {builtin_avg:.3f} ms")
         print(f"Maximum delay:            {builtin_max:.3f} ms")
-
-        print("DELAY VALIDATION")
-        print(f"Sample counts match:      {measured == builtin_samples}")
-        print(
-            f"Average matches:          "
-            f"{abs(avg_delay - builtin_avg) < 0.001}"
-        )
-        print(
-            f"Maximum matches:          "
-            f"{abs(max_delay - builtin_max) < 0.001}"
-        )
-
 
 
 def print_queue_disc_drop_reasons(topology):
