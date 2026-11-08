@@ -167,6 +167,11 @@ def create_topology():
     print("Topology created successfully.")
 
     return {
+        # Generic access to every node by name.
+        "nodes": nodes,
+        "node_ips": node_ips,
+
+        # Existing role-specific containers.
         "clients": containers["client"],
         "routers": containers["router"],
         "servers": containers["server"],

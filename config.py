@@ -1,5 +1,5 @@
 # Change this to "low", "medium", or "high".
-ACTIVE_SCENARIO = "low"
+ACTIVE_SCENARIO = "medium"
 
 # Topology configuration
 # Each link is a tuple: (node_a, node_b, data_rate, delay, queue_size)
@@ -32,8 +32,8 @@ LOAD_SCENARIOS = {
             {
                 "name": "UDP",
                 "protocol": "UDP",
-                "client": 0,
-                "server": 0,
+                "source": "client0",
+                "destination": "server0",
                 "port": 9000,
                 "rate": "1Mbps",
                 "packet_size": 1024,
@@ -41,8 +41,8 @@ LOAD_SCENARIOS = {
             {
                 "name": "TCP",
                 "protocol": "TCP",
-                "client": 1,
-                "server": 1,
+                "source": "client1",
+                "destination": "server1",
                 "port": 9001,
                 "rate": "1Mbps",
                 "packet_size": 1024,
@@ -50,8 +50,8 @@ LOAD_SCENARIOS = {
             {
                 "name": "UDP_2",
                 "protocol": "UDP",
-                "client": 2,
-                "server": 0,
+                "source": "client2",
+                "destination": "server0",
                 "port": 9002,
                 "rate": "2Mbps",
                 "packet_size": 512,
@@ -59,8 +59,8 @@ LOAD_SCENARIOS = {
             {
                 "name": "TCP_2",
                 "protocol": "TCP",
-                "client": 0,
-                "server": 1,
+                "source": "client0",
+                "destination": "server1",
                 "port": 9003,
                 "rate": "1Mbps",
                 "packet_size": 1024,
@@ -74,8 +74,8 @@ LOAD_SCENARIOS = {
             {
                 "name": "UDP",
                 "protocol": "UDP",
-                "client": 0,
-                "server": 0,
+                "source": "client0",
+                "destination": "server0",
                 "port": 9000,
                 "rate": "4Mbps",
                 "packet_size": 1024,
@@ -83,8 +83,8 @@ LOAD_SCENARIOS = {
             {
                 "name": "TCP",
                 "protocol": "TCP",
-                "client": 1,
-                "server": 1,
+                "source": "client1",
+                "destination": "server1",
                 "port": 9001,
                 "rate": "4Mbps",
                 "packet_size": 1024,
@@ -92,8 +92,8 @@ LOAD_SCENARIOS = {
             {
                 "name": "UDP_2",
                 "protocol": "UDP",
-                "client": 2,
-                "server": 0,
+                "source": "client2",
+                "destination": "server0",
                 "port": 9002,
                 "rate": "2Mbps",
                 "packet_size": 512,
@@ -101,8 +101,8 @@ LOAD_SCENARIOS = {
             {
                 "name": "TCP_2",
                 "protocol": "TCP",
-                "client": 0,
-                "server": 1,
+                "source": "client0",
+                "destination": "server1",
                 "port": 9003,
                 "rate": "2Mbps",
                 "packet_size": 1024,
@@ -116,8 +116,8 @@ LOAD_SCENARIOS = {
             {
                 "name": "UDP",
                 "protocol": "UDP",
-                "client": 0,
-                "server": 0,
+                "source": "client0",
+                "destination": "server0",
                 "port": 9000,
                 "rate": "8Mbps",
                 "packet_size": 1024,
@@ -125,8 +125,8 @@ LOAD_SCENARIOS = {
             {
                 "name": "TCP",
                 "protocol": "TCP",
-                "client": 1,
-                "server": 1,
+                "source": "client1",
+                "destination": "server1",
                 "port": 9001,
                 "rate": "8Mbps",
                 "packet_size": 1024,
@@ -134,8 +134,8 @@ LOAD_SCENARIOS = {
             {
                 "name": "UDP_2",
                 "protocol": "UDP",
-                "client": 2,
-                "server": 0,
+                "source": "client2",
+                "destination": "server0",
                 "port": 9002,
                 "rate": "2Mbps",
                 "packet_size": 512,
@@ -143,8 +143,8 @@ LOAD_SCENARIOS = {
             {
                 "name": "TCP_2",
                 "protocol": "TCP",
-                "client": 0,
-                "server": 1,
+                "source": "client0",
+                "destination": "server1",
                 "port": 9003,
                 "rate": "4Mbps",
                 "packet_size": 1024,
@@ -153,6 +153,12 @@ LOAD_SCENARIOS = {
     },
 }
 
+
+if ACTIVE_SCENARIO not in LOAD_SCENARIOS:
+    raise ValueError(
+        f"Unknown scenario '{ACTIVE_SCENARIO}'. "
+        f"Choose one of: {', '.join(LOAD_SCENARIOS)}."
+    )
 
 # Traffic module uses the flows from the selected scenario.
 TRAFFIC_FLOWS = LOAD_SCENARIOS[ACTIVE_SCENARIO]["flows"]
