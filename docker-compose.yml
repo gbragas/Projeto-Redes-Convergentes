@@ -3,7 +3,7 @@ version: '3.8'
 services:
   ns3-sim:
     build: .
-    container_name: redes-convergentes-ns3
+    container_name: rc-ns3
     volumes:
       # Espelha o diretório atual (seus scripts .py e .h) para dentro do scratch do ns-3
       - ./:/usr/ns3/ns-allinone-3.48/ns-3.48/scratch/network-qos

@@ -1,6 +1,9 @@
 # Change this to "low", "medium", or "high".
 ACTIVE_SCENARIO = "medium"
 
+# Controls the amount of monitoring information printed.
+VERBOSE_MONITORING = False
+
 # Topology configuration
 # Each link is a tuple: (node_a, node_b, data_rate, delay, queue_size)
 #   queue_size: e.g. "100p", or None to keep the default queue.
