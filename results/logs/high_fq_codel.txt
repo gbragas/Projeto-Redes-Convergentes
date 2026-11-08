@@ -1,0 +1,130 @@
+Load scenario: high
+High network load
+Topology created successfully.
+QoS mechanism: fq_codel
+Priority Queuing: disabled
+voice [voice]: client0 -> server0 (UDP, 256Kbps, 160 bytes)
+data [data]: client1 -> server1 (TCP, 8Mbps, 1024 bytes)
+video [video]: client2 -> server0 (UDP, 6Mbps, 1200 bytes)
+iot [iot]: client0 -> server1 (UDP, 512Kbps, 100 bytes)
+
+--- Simulation Results ---
+voice received: 223840 bytes
+data received: 2768896 bytes
+video received: 4870800 bytes
+iot received: 447900 bytes
+
+========================================================================================================================
+FLOWMONITOR — QoS STATISTICS
+========================================================================================================================
+ID   Profile      Flow                                        Tx      Rx    Lost      Throughput          Delay         Jitter
+------------------------------------------------------------------------------------------------------------------------------
+1    data         TCP | Client 1 -> Server 1                5205    5191      14       3.377 Mbps     89.041 ms      1.151 ms
+2    iot          UDP | Client 0 -> Server 1                4479    4479       0       0.651 Mbps     70.439 ms      0.884 ms
+3    video        UDP | Client 2 -> Server 0                4374    4059     315       5.638 Mbps    111.680 ms      0.709 ms
+4    voice        UDP | Client 0 -> Server 0                1399    1399       0       0.299 Mbps     70.419 ms      1.670 ms
+5    data (ACK)   TCP | Server 1 -> Client 1                2973    2973       0       0.187 Mbps     24.056 ms      0.000 ms
+========================================================================================================================
+Throughput: Mbps | Delay and jitter: milliseconds
+
+============================================================
+DEVICE QUEUE STATISTICS
+============================================================
+
+R0 -> R1
+----------------------------------------
+Capacity:                 100 packets
+Tracked occupancy:        0 packets
+ns-3 occupancy:           0 packets
+Peak occupancy:           100 packets
+Enqueue events:            15128
+Dequeue events:            15128
+Drop events:               0
+Measured delay samples:   15128
+Average queue delay:      45.261 ms
+Maximum queue delay:      67.104 ms
+ns-3 total drops:          0
+Unmatched dequeues:        0
+Occupancy consistent:      True
+
+R1 -> R0
+----------------------------------------
+Capacity:                 100 packets
+Tracked occupancy:        0 packets
+ns-3 occupancy:           0 packets
+Peak occupancy:           1 packets
+Enqueue events:            2973
+Dequeue events:            2973
+Drop events:               0
+Measured delay samples:   2973
+Average queue delay:      0.000 ms
+Maximum queue delay:      0.039 ms
+ns-3 total drops:          0
+Unmatched dequeues:        0
+Occupancy consistent:      True
+
+============================================================
+QUEUE DISC STATUS
+============================================================
+
+R0 -> R1: ns3::FqCoDelQueueDisc
+----------------------------------------
+Capacity:                 10240 packets
+Current occupancy:        0 packets
+Current queued bytes:     0 bytes
+Peak occupancy:           194 packets
+
+R1 -> R0: ns3::FqCoDelQueueDisc
+----------------------------------------
+Capacity:                 10240 packets
+Current occupancy:        0 packets
+Current queued bytes:     0 bytes
+Peak occupancy:           1 packets
+
+============================================================
+QUEUE DISC EVENT STATISTICS
+============================================================
+
+R0 -> R1
+----------------------------------------
+Enqueue events:            15457
+Dequeue events:            15457
+Requeue events:            0
+Drop events:               329
+Drops before enqueue:      0
+Drops after dequeue:       329
+Unmatched dequeues:        0
+Tracked occupancy:         0 packets
+Actual occupancy:          0 packets
+Occupancy matches ns-3:    True
+Tracked queued bytes:      0 bytes
+Actual queued bytes:       0 bytes
+Bytes match ns-3:          True
+Internal accounting:       True
+NS-3 BUILT-IN SOJOURN TIME
+Samples:                  15457
+Average delay:            18.713 ms
+Maximum delay:            167.243 ms
+
+R1 -> R0
+----------------------------------------
+Enqueue events:            2973
+Dequeue events:            2973
+Requeue events:            0
+Drop events:               0
+Drops before enqueue:      0
+Drops after dequeue:       0
+Unmatched dequeues:        0
+Tracked occupancy:         0 packets
+Actual occupancy:          0 packets
+Occupancy matches ns-3:    True
+Tracked queued bytes:      0 bytes
+Actual queued bytes:       0 bytes
+Bytes match ns-3:          True
+Internal accounting:       True
+NS-3 BUILT-IN SOJOURN TIME
+Samples:                  2973
+Average delay:            0.000 ms
+Maximum delay:            0.000 ms
+
+Simulation finished.

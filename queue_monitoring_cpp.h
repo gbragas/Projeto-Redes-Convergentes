@@ -8,6 +8,7 @@
 #include "ns3/node.h"
 #include "ns3/queue.h"
 #include "ns3/queue-disc.h"
+#include "ns3/prio-queue-disc.h"
 #include "ns3/traffic-control-layer.h"
 
 #include "ns3/simulator.h"
@@ -309,6 +310,40 @@ MakeQueueDiscDropAfterDequeueCallback(uint32_t id)
 // ============================================================
 // QueueDisc lookup
 // ============================================================
+
+// Capacity of a QueueDisc in packets, or -1 if it is not limited in
+// packets. A PrioQueueDisc has no limit of its own, so the capacities of
+// its bands are added up.
+int64_t GetQueueDiscCapacityPackets(Ptr<QueueDisc> queueDisc)
+{
+    if (!queueDisc)
+        return -1;
+
+    if (DynamicCast<PrioQueueDisc>(queueDisc))
+    {
+        int64_t total = 0;
+
+        for (uint32_t i = 0; i < queueDisc->GetNQueueDiscClasses(); ++i)
+        {
+            int64_t band = GetQueueDiscCapacityPackets(
+                queueDisc->GetQueueDiscClass(i)->GetQueueDisc());
+
+            if (band < 0)
+                return -1;
+
+            total += band;
+        }
+
+        return total;
+    }
+
+    QueueSize size = queueDisc->GetMaxSize();
+
+    if (size.GetUnit() != QueueSizeUnit::PACKETS)
+        return -1;
+
+    return size.GetValue();
+}
 
 Ptr<QueueDisc> GetRootQueueDiscForPython(Ptr<NetDevice> device)
 {

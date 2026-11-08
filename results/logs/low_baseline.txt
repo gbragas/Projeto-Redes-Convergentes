@@ -1,0 +1,102 @@
+Load scenario: low
+Low network load
+Topology created successfully.
+QoS mechanism: baseline
+Priority Queuing: disabled
+voice [voice]: client0 -> server0 (UDP, 128Kbps, 160 bytes)
+data [data]: client1 -> server1 (TCP, 1Mbps, 1024 bytes)
+video [video]: client2 -> server0 (UDP, 1Mbps, 1200 bytes)
+iot [iot]: client0 -> server1 (UDP, 64Kbps, 100 bytes)
+
+--- Simulation Results ---
+voice received: 111840 bytes
+data received: 868352 bytes
+video received: 874800 bytes
+iot received: 55900 bytes
+
+========================================================================================================================
+FLOWMONITOR — QoS STATISTICS
+========================================================================================================================
+ID   Profile      Flow                                        Tx      Rx    Lost      Throughput          Delay         Jitter
+------------------------------------------------------------------------------------------------------------------------------
+1    data         TCP | Client 1 -> Server 1                1700    1700       0       1.086 Mbps     24.834 ms      0.447 ms
+2    video        UDP | Client 2 -> Server 0                 729     729       0       1.025 Mbps     25.236 ms      0.108 ms
+3    voice        UDP | Client 0 -> Server 0                 699     699       0       0.151 Mbps     24.280 ms      0.158 ms
+4    iot          UDP | Client 0 -> Server 1                 559     559       0       0.082 Mbps     24.263 ms      0.244 ms
+5    data (ACK)   TCP | Server 1 -> Client 1                 850     850       0       0.051 Mbps     24.052 ms      0.000 ms
+========================================================================================================================
+Throughput: Mbps | Delay and jitter: milliseconds
+
+============================================================
+DEVICE QUEUE STATISTICS
+============================================================
+
+R0 -> R1
+----------------------------------------
+Capacity:                 100 packets
+Tracked occupancy:        0 packets
+ns-3 occupancy:           0 packets
+Peak occupancy:           3 packets
+Enqueue events:            3687
+Dequeue events:            3687
+Drop events:               0
+Measured delay samples:   3687
+Average queue delay:      0.174 ms
+Maximum queue delay:      1.559 ms
+ns-3 total drops:          0
+Unmatched dequeues:        0
+Occupancy consistent:      True
+
+R1 -> R0
+----------------------------------------
+Capacity:                 100 packets
+Tracked occupancy:        0 packets
+ns-3 occupancy:           0 packets
+Peak occupancy:           1 packets
+Enqueue events:            850
+Dequeue events:            850
+Drop events:               0
+Measured delay samples:   850
+Average queue delay:      0.000 ms
+Maximum queue delay:      0.000 ms
+ns-3 total drops:          0
+Unmatched dequeues:        0
+Occupancy consistent:      True
+
+============================================================
+QUEUE DISC STATUS
+============================================================
+
+R0 -> R1
+----------------------------------------
+QueueDisc:                 Not installed
+Capacity:                  N/A
+Current occupancy:         N/A
+Current queued bytes:      N/A
+Peak occupancy:            N/A
+
+R1 -> R0
+----------------------------------------
+QueueDisc:                 Not installed
+Capacity:                  N/A
+Current occupancy:         N/A
+Current queued bytes:      N/A
+Peak occupancy:            N/A
+
+============================================================
+QUEUE DISC EVENT STATISTICS
+============================================================
+
+R0 -> R1
+----------------------------------------
+QueueDisc:                 Not installed
+QueueDisc event statistics: N/A
+QueueDisc sojourn time:    N/A
+
+R1 -> R0
+----------------------------------------
+QueueDisc:                 Not installed
+QueueDisc event statistics: N/A
+QueueDisc sojourn time:    N/A
+
+Simulation finished.

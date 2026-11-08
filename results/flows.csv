@@ -1,0 +1,61 @@
+scenario,config,flow_id,profile,protocol,source,destination,offered_rate,packet_size_bytes,tx_packets,rx_packets,lost_packets,loss_pct,throughput_mbps,avg_delay_ms,avg_jitter_ms,sink_rx_bytes
+low,baseline,3,voice,UDP,Client 0,Server 0,128Kbps,160,699,699,0,0.0,0.151,24.28,0.158,111840
+low,baseline,2,video,UDP,Client 2,Server 0,1Mbps,1200,729,729,0,0.0,1.025,25.236,0.108,874800
+low,baseline,4,iot,UDP,Client 0,Server 1,64Kbps,100,559,559,0,0.0,0.082,24.263,0.244,55900
+low,baseline,1,data,TCP,Client 1,Server 1,1Mbps,1024,1700,1700,0,0.0,1.086,24.834,0.447,868352
+low,baseline,5,data (ACK),TCP,Server 1,Client 1,,,850,850,0,0.0,0.051,24.052,0.0,
+low,fq_codel,3,voice,UDP,Client 0,Server 0,128Kbps,160,699,699,0,0.0,0.151,24.28,0.158,111840
+low,fq_codel,2,video,UDP,Client 2,Server 0,1Mbps,1200,729,729,0,0.0,1.025,25.236,0.108,874800
+low,fq_codel,4,iot,UDP,Client 0,Server 1,64Kbps,100,559,559,0,0.0,0.082,24.263,0.244,55900
+low,fq_codel,1,data,TCP,Client 1,Server 1,1Mbps,1024,1700,1700,0,0.0,1.086,24.834,0.447,868352
+low,fq_codel,5,data (ACK),TCP,Server 1,Client 1,,,850,850,0,0.0,0.051,24.052,0.0,
+low,pq_baseline,3,voice,UDP,Client 0,Server 0,128Kbps,160,699,699,0,0.0,0.151,24.278,0.154,111840
+low,pq_baseline,2,video,UDP,Client 2,Server 0,1Mbps,1200,729,729,0,0.0,1.025,25.235,0.107,874800
+low,pq_baseline,4,iot,UDP,Client 0,Server 1,64Kbps,100,559,559,0,0.0,0.082,24.267,0.254,55900
+low,pq_baseline,1,data,TCP,Client 1,Server 1,1Mbps,1024,1700,1700,0,0.0,1.086,24.834,0.448,868352
+low,pq_baseline,5,data (ACK),TCP,Server 1,Client 1,,,850,850,0,0.0,0.051,24.052,0.0,
+low,pq_fq_codel,3,voice,UDP,Client 0,Server 0,128Kbps,160,699,699,0,0.0,0.151,24.278,0.154,111840
+low,pq_fq_codel,2,video,UDP,Client 2,Server 0,1Mbps,1200,729,729,0,0.0,1.025,25.235,0.107,874800
+low,pq_fq_codel,4,iot,UDP,Client 0,Server 1,64Kbps,100,559,559,0,0.0,0.082,24.267,0.254,55900
+low,pq_fq_codel,1,data,TCP,Client 1,Server 1,1Mbps,1024,1700,1700,0,0.0,1.086,24.834,0.448,868352
+low,pq_fq_codel,5,data (ACK),TCP,Server 1,Client 1,,,850,850,0,0.0,0.051,24.052,0.0,
+medium,baseline,4,voice,UDP,Client 0,Server 0,128Kbps,160,699,699,0,0.0,0.151,25.467,0.5,111840
+medium,baseline,2,video,UDP,Client 2,Server 0,4Mbps,1200,2916,2916,0,0.0,4.095,26.13,0.267,3499200
+medium,baseline,3,iot,UDP,Client 0,Server 1,256Kbps,100,2239,2239,0,0.0,0.328,25.437,0.563,223900
+medium,baseline,1,data,TCP,Client 1,Server 1,4Mbps,1024,6783,6783,0,0.0,4.345,25.918,0.469,3475456
+medium,baseline,5,data (ACK),TCP,Server 1,Client 1,,,3392,3392,0,0.0,0.202,24.052,0.0,
+medium,fq_codel,4,voice,UDP,Client 0,Server 0,128Kbps,160,699,699,0,0.0,0.151,25.467,0.5,111840
+medium,fq_codel,2,video,UDP,Client 2,Server 0,4Mbps,1200,2916,2916,0,0.0,4.095,26.13,0.267,3499200
+medium,fq_codel,3,iot,UDP,Client 0,Server 1,256Kbps,100,2239,2239,0,0.0,0.328,25.437,0.563,223900
+medium,fq_codel,1,data,TCP,Client 1,Server 1,4Mbps,1024,6783,6783,0,0.0,4.345,25.918,0.469,3475456
+medium,fq_codel,5,data (ACK),TCP,Server 1,Client 1,,,3392,3392,0,0.0,0.202,24.052,0.0,
+medium,pq_baseline,4,voice,UDP,Client 0,Server 0,128Kbps,160,699,699,0,0.0,0.151,24.676,0.342,111840
+medium,pq_baseline,2,video,UDP,Client 2,Server 0,4Mbps,1200,2916,2916,0,0.0,4.095,25.409,0.232,3499200
+medium,pq_baseline,3,iot,UDP,Client 0,Server 1,256Kbps,100,2239,2239,0,0.0,0.328,24.704,0.521,223900
+medium,pq_baseline,1,data,TCP,Client 1,Server 1,4Mbps,1024,6783,6783,0,0.0,4.345,26.566,0.51,3475456
+medium,pq_baseline,5,data (ACK),TCP,Server 1,Client 1,,,3392,3392,0,0.0,0.202,24.052,0.0,
+medium,pq_fq_codel,4,voice,UDP,Client 0,Server 0,128Kbps,160,699,699,0,0.0,0.151,24.676,0.341,111840
+medium,pq_fq_codel,2,video,UDP,Client 2,Server 0,4Mbps,1200,2916,2916,0,0.0,4.095,25.409,0.232,3499200
+medium,pq_fq_codel,3,iot,UDP,Client 0,Server 1,256Kbps,100,2239,2239,0,0.0,0.328,24.704,0.521,223900
+medium,pq_fq_codel,1,data,TCP,Client 1,Server 1,4Mbps,1024,6787,6783,4,0.059,4.345,26.528,0.511,3475456
+medium,pq_fq_codel,5,data (ACK),TCP,Server 1,Client 1,,,3515,3515,0,0.0,0.211,24.052,0.0,
+high,baseline,4,voice,UDP,Client 0,Server 0,256Kbps,160,1399,1373,26,1.858,0.294,43.664,0.696,219680
+high,baseline,3,video,UDP,Client 2,Server 0,6Mbps,1200,4374,4321,53,1.212,6.046,44.449,0.373,5185200
+high,baseline,2,iot,UDP,Client 0,Server 1,512Kbps,100,4479,4425,54,1.206,0.645,43.789,0.392,442500
+high,baseline,1,data,TCP,Client 1,Server 1,8Mbps,1024,3698,3478,220,5.949,2.247,50.967,0.56,1861632
+high,baseline,5,data (ACK),TCP,Server 1,Client 1,,,2055,2055,0,0.0,0.134,24.058,0.0,
+high,fq_codel,4,voice,UDP,Client 0,Server 0,256Kbps,160,1399,1399,0,0.0,0.299,70.419,1.67,223840
+high,fq_codel,3,video,UDP,Client 2,Server 0,6Mbps,1200,4374,4059,315,7.202,5.638,111.68,0.709,4870800
+high,fq_codel,2,iot,UDP,Client 0,Server 1,512Kbps,100,4479,4479,0,0.0,0.651,70.439,0.884,447900
+high,fq_codel,1,data,TCP,Client 1,Server 1,8Mbps,1024,5205,5191,14,0.269,3.377,89.041,1.151,2768896
+high,fq_codel,5,data (ACK),TCP,Server 1,Client 1,,,2973,2973,0,0.0,0.187,24.056,0.0,
+high,pq_baseline,4,voice,UDP,Client 0,Server 0,256Kbps,160,1399,1399,0,0.0,0.301,24.876,0.316,223840
+high,pq_baseline,3,video,UDP,Client 2,Server 0,6Mbps,1200,4374,4374,0,0.0,6.141,25.56,0.216,5248800
+high,pq_baseline,2,iot,UDP,Client 0,Server 1,512Kbps,100,4479,4479,0,0.0,0.655,25.247,0.55,447900
+high,pq_baseline,1,data,TCP,Client 1,Server 1,8Mbps,1024,3835,3771,64,1.669,2.477,123.029,1.658,2018304
+high,pq_baseline,5,data (ACK),TCP,Server 1,Client 1,,,2013,2013,0,0.0,0.125,24.055,0.0,
+high,pq_fq_codel,4,voice,UDP,Client 0,Server 0,256Kbps,160,1399,1399,0,0.0,0.301,24.863,0.36,223840
+high,pq_fq_codel,3,video,UDP,Client 2,Server 0,6Mbps,1200,4374,4374,0,0.0,6.141,25.539,0.262,5248800
+high,pq_fq_codel,2,iot,UDP,Client 0,Server 1,512Kbps,100,4479,4479,0,0.0,0.656,25.196,0.546,447900
+high,pq_fq_codel,1,data,TCP,Client 1,Server 1,8Mbps,1024,4132,4105,27,0.653,2.568,36.736,1.256,2196480
+high,pq_fq_codel,5,data (ACK),TCP,Server 1,Client 1,,,2404,2404,0,0.0,0.146,24.056,0.0,

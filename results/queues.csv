@@ -1,0 +1,25 @@
+scenario,config,direction,device_capacity_pkts,device_peak_pkts,device_enqueues,device_drops,device_avg_delay_ms,device_max_delay_ms,qdisc_type,qdisc_capacity_pkts,qdisc_peak_pkts,qdisc_enqueues,qdisc_drops,qdisc_avg_sojourn_ms,qdisc_max_sojourn_ms
+low,baseline,R0 -> R1,100,3,3687,0,0.174,1.559,none,,,,,,
+low,baseline,R1 -> R0,100,1,850,0,0.000,0.000,none,,,,,,
+low,fq_codel,R0 -> R1,100,3,3687,0,0.174,1.559,FqCoDelQueueDisc,10240,1,3687,0,0.000,0.000
+low,fq_codel,R1 -> R0,100,1,850,0,0.000,0.000,FqCoDelQueueDisc,10240,1,850,0,0.000,0.000
+low,pq_baseline,R0 -> R1,1,1,3687,0,0.149,0.984,PrioQueueDisc,400,2,3687,0,0.025,1.294
+low,pq_baseline,R1 -> R0,1,1,850,0,0.000,0.000,PrioQueueDisc,400,1,850,0,0.000,0.000
+low,pq_fq_codel,R0 -> R1,1,1,3687,0,0.149,0.984,PrioQueueDisc,40960,2,3687,0,0.025,1.294
+low,pq_fq_codel,R1 -> R0,1,1,850,0,0.000,0.000,PrioQueueDisc,40960,1,850,0,0.000,0.000
+medium,baseline,R0 -> R1,100,60,12637,0,1.247,29.002,none,,,,,,
+medium,baseline,R1 -> R0,100,1,3392,0,0.000,0.039,none,,,,,,
+medium,fq_codel,R0 -> R1,100,60,12637,0,1.247,29.002,FqCoDelQueueDisc,10240,1,12637,0,0.000,0.000
+medium,fq_codel,R1 -> R0,100,1,3392,0,0.000,0.039,FqCoDelQueueDisc,10240,1,3392,0,0.000,0.000
+medium,pq_baseline,R0 -> R1,1,1,12637,0,0.308,0.984,PrioQueueDisc,400,59,12637,0,0.947,49.315
+medium,pq_baseline,R1 -> R0,1,1,3392,0,0.000,0.039,PrioQueueDisc,400,1,3392,0,0.000,0.000
+medium,pq_fq_codel,R0 -> R1,1,1,12637,0,0.307,0.984,PrioQueueDisc,40960,59,12641,4,0.934,49.163
+medium,pq_fq_codel,R1 -> R0,1,1,3515,0,0.000,0.039,PrioQueueDisc,40960,1,3515,0,0.000,0.000
+high,baseline,R0 -> R1,100,100,13597,0,21.236,50.469,none,,,,,,
+high,baseline,R1 -> R0,100,1,2055,0,0.000,0.039,none,,,,,,
+high,fq_codel,R0 -> R1,100,100,15128,0,45.261,67.104,FqCoDelQueueDisc,10240,194,15457,329,18.713,167.243
+high,fq_codel,R1 -> R0,100,1,2973,0,0.000,0.039,FqCoDelQueueDisc,10240,1,2973,0,0.000,0.000
+high,pq_baseline,R0 -> R1,1,1,14023,0,0.439,0.984,PrioQueueDisc,400,103,14023,64,26.577,165.255
+high,pq_baseline,R1 -> R0,1,1,2013,0,0.000,0.039,PrioQueueDisc,400,1,2013,0,0.000,0.000
+high,pq_fq_codel,R0 -> R1,1,1,14357,0,0.441,0.984,PrioQueueDisc,40960,93,14384,27,3.640,144.655
+high,pq_fq_codel,R1 -> R0,1,1,2404,0,0.000,0.039,PrioQueueDisc,40960,1,2404,0,0.000,0.000

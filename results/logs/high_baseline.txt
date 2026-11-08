@@ -1,0 +1,102 @@
+Load scenario: high
+High network load
+Topology created successfully.
+QoS mechanism: baseline
+Priority Queuing: disabled
+voice [voice]: client0 -> server0 (UDP, 256Kbps, 160 bytes)
+data [data]: client1 -> server1 (TCP, 8Mbps, 1024 bytes)
+video [video]: client2 -> server0 (UDP, 6Mbps, 1200 bytes)
+iot [iot]: client0 -> server1 (UDP, 512Kbps, 100 bytes)
+
+--- Simulation Results ---
+voice received: 219680 bytes
+data received: 1861632 bytes
+video received: 5185200 bytes
+iot received: 442500 bytes
+
+========================================================================================================================
+FLOWMONITOR — QoS STATISTICS
+========================================================================================================================
+ID   Profile      Flow                                        Tx      Rx    Lost      Throughput          Delay         Jitter
+------------------------------------------------------------------------------------------------------------------------------
+1    data         TCP | Client 1 -> Server 1                3698    3478     220       2.247 Mbps     50.967 ms      0.560 ms
+2    iot          UDP | Client 0 -> Server 1                4479    4425      54       0.645 Mbps     43.789 ms      0.392 ms
+3    video        UDP | Client 2 -> Server 0                4374    4321      53       6.046 Mbps     44.449 ms      0.373 ms
+4    voice        UDP | Client 0 -> Server 0                1399    1373      26       0.294 Mbps     43.664 ms      0.696 ms
+5    data (ACK)   TCP | Server 1 -> Client 1                2055    2055       0       0.134 Mbps     24.058 ms      0.000 ms
+========================================================================================================================
+Throughput: Mbps | Delay and jitter: milliseconds
+
+============================================================
+DEVICE QUEUE STATISTICS
+============================================================
+
+R0 -> R1
+----------------------------------------
+Capacity:                 100 packets
+Tracked occupancy:        0 packets
+ns-3 occupancy:           0 packets
+Peak occupancy:           100 packets
+Enqueue events:            13597
+Dequeue events:            13597
+Drop events:               0
+Measured delay samples:   13597
+Average queue delay:      21.236 ms
+Maximum queue delay:      50.469 ms
+ns-3 total drops:          0
+Unmatched dequeues:        0
+Occupancy consistent:      True
+
+R1 -> R0
+----------------------------------------
+Capacity:                 100 packets
+Tracked occupancy:        0 packets
+ns-3 occupancy:           0 packets
+Peak occupancy:           1 packets
+Enqueue events:            2055
+Dequeue events:            2055
+Drop events:               0
+Measured delay samples:   2055
+Average queue delay:      0.000 ms
+Maximum queue delay:      0.039 ms
+ns-3 total drops:          0
+Unmatched dequeues:        0
+Occupancy consistent:      True
+
+============================================================
+QUEUE DISC STATUS
+============================================================
+
+R0 -> R1
+----------------------------------------
+QueueDisc:                 Not installed
+Capacity:                  N/A
+Current occupancy:         N/A
+Current queued bytes:      N/A
+Peak occupancy:            N/A
+
+R1 -> R0
+----------------------------------------
+QueueDisc:                 Not installed
+Capacity:                  N/A
+Current occupancy:         N/A
+Current queued bytes:      N/A
+Peak occupancy:            N/A
+
+============================================================
+QUEUE DISC EVENT STATISTICS
+============================================================
+
+R0 -> R1
+----------------------------------------
+QueueDisc:                 Not installed
+QueueDisc event statistics: N/A
+QueueDisc sojourn time:    N/A
+
+R1 -> R0
+----------------------------------------
+QueueDisc:                 Not installed
+QueueDisc event statistics: N/A
+QueueDisc sojourn time:    N/A
+
+Simulation finished.
