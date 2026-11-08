@@ -11,12 +11,35 @@ def install_traffic(topology):
     for flow in config.TRAFFIC_FLOWS:
         name = flow["name"]
         protocol = flow["protocol"].upper()
+        profile = flow["profile"]
 
         source_name = flow["source"]
         destination_name = flow["destination"]
         port = flow["port"]
+        packet_size = flow["packet_size"]
 
-        # 1. Validate endpoints.
+        # 1. Validate traffic profile.
+        if profile not in config.TRAFFIC_PROFILES:
+            raise ValueError(
+                f"{name}: unknown traffic profile '{profile}'"
+            )
+
+        profile_config = config.TRAFFIC_PROFILES[profile]
+
+        if protocol != profile_config["protocol"]:
+            raise ValueError(
+                f"{name}: profile '{profile}' requires "
+                f"{profile_config['protocol']}, but got '{protocol}'"
+            )
+
+        if packet_size != profile_config["packet_size"]:
+            raise ValueError(
+                f"{name}: profile '{profile}' requires "
+                f"packet size {profile_config['packet_size']}, "
+                f"but got {packet_size}"
+            )
+
+        # 2. Validate endpoints.
         if source_name not in nodes:
             raise ValueError(
                 f"{name}: unknown source node '{source_name}'"
@@ -33,12 +56,14 @@ def install_traffic(topology):
             )
 
         if protocol not in ("UDP", "TCP"):
-            raise ValueError(f"{name}: unsupported protocol '{protocol}'")
+            raise ValueError(
+                f"{name}: unsupported protocol '{protocol}'"
+            )
 
         if not 1 <= port <= 65535:
             raise ValueError(f"{name}: invalid port '{port}'")
 
-        # 2. Resolve the endpoint nodes and destination address.
+        # 3. Resolve endpoint nodes and destination address.
         source = nodes[source_name]
         destination = nodes[destination_name]
         destination_ip = node_ips[destination_name]
@@ -49,7 +74,7 @@ def install_traffic(topology):
             else "ns3::TcpSocketFactory"
         )
 
-        # 3. Install receiver on the destination node.
+        # 4. Install receiver on the destination node.
         sink_address = ns.InetSocketAddress(
             ns.Ipv4Address.GetAny(), port
         ).ConvertTo()
@@ -62,7 +87,7 @@ def install_traffic(topology):
         sink_app.Start(ns.Seconds(1.0))
         sink_app.Stop(ns.Seconds(config.SIMULATION_TIME))
 
-        # 4. Install sender on the source node.
+        # 5. Install sender on the source node.
         remote_address = ns.InetSocketAddress(
             destination_ip, port
         ).ConvertTo()
@@ -77,7 +102,7 @@ def install_traffic(topology):
         )
         sender_helper.SetAttribute(
             "PacketSize",
-            ns.UintegerValue(flow["packet_size"])
+            ns.UintegerValue(packet_size)
         )
         sender_helper.SetAttribute(
             "OnTime",
@@ -101,8 +126,9 @@ def install_traffic(topology):
         sinks[name] = sink_app
 
         print(
-            f"{name}: {source_name} -> {destination_name} "
-            f"({protocol}, {flow['rate']})"
+            f"{name} [{profile}]: "
+            f"{source_name} -> {destination_name} "
+            f"({protocol}, {flow['rate']}, {packet_size} bytes)"
         )
 
     return sinks

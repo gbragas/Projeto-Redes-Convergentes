@@ -36,7 +36,13 @@ def _get_device_queue(device):
 
 def _get_queue_disc(device):
     try:
-        return _get_cpp().GetRootQueueDiscForPython(device)
+        queue_disc = _get_cpp().GetRootQueueDiscForPython(device)
+
+        if not queue_disc:
+            return None
+
+        return queue_disc
+
     except Exception:
         return None
 
@@ -270,8 +276,13 @@ def print_queue_disc_statistics(topology):
         queue_disc = _get_queue_disc(device)
 
         if queue_disc is None:
-            if config.VERBOSE_MONITORING:
-                print(f"Device {index}: no root QueueDisc available")
+            print(f"\n{label}")
+            print("-" * 40)
+            print("QueueDisc:                 Not installed")
+            print("Capacity:                  N/A")
+            print("Current occupancy:         N/A")
+            print("Current queued bytes:      N/A")
+            print("Peak occupancy:            N/A")
             continue
 
         try:
@@ -300,8 +311,9 @@ def print_queue_disc_statistics(topology):
 # Detailed QueueDisc event statistics
 # ============================================================
 
+
 def print_queue_disc_monitor_statistics(queue_disc_monitors, topology):
-    if not config.VERBOSE_MONITORING:
+    if not config.SHOW_QUEUE_DISC_STATISTICS:
         return
 
     cpp = _get_cpp()
@@ -312,9 +324,16 @@ def print_queue_disc_monitor_statistics(queue_disc_monitors, topology):
     print("=" * 60)
 
     for index in range(devices.GetN()):
-        queue_disc = _get_queue_disc(devices.Get(index))
+        device = devices.Get(index)
+        label = _get_link_label(device, topology)
+        queue_disc = _get_queue_disc(device)
 
         if queue_disc is None:
+            print(f"\n{label}")
+            print("-" * 40)
+            print("QueueDisc:                 Not installed")
+            print("QueueDisc event statistics: N/A")
+            print("QueueDisc sojourn time:    N/A")
             continue
 
         enqueues = int(cpp.GetQueueDiscEnqueues(index))
@@ -356,9 +375,6 @@ def print_queue_disc_monitor_statistics(queue_disc_monitors, topology):
             and unmatched == 0
         )
 
-        device = devices.Get(index)
-        label = _get_link_label(device, topology)
-
         print(f"\n{label}")
         print("-" * 40)
         print(f"Enqueue events:            {enqueues}")
@@ -377,9 +393,15 @@ def print_queue_disc_monitor_statistics(queue_disc_monitors, topology):
         print(f"Internal accounting:       {consistent}")
 
         print("NS-3 BUILT-IN SOJOURN TIME")
-        print(f"Samples:                  {builtin_samples}")
-        print(f"Average delay:            {builtin_avg:.3f} ms")
-        print(f"Maximum delay:            {builtin_max:.3f} ms")
+        if builtin_samples > 0:
+            print(f"Samples:                  {builtin_samples}")
+            print(f"Average delay:            {builtin_avg:.3f} ms")
+            print(f"Maximum delay:            {builtin_max:.3f} ms")
+        else:
+            print("Samples:                  0")
+            print("Average delay:            N/A")
+            print("Maximum delay:            N/A")
+
 
 
 # ============================================================
