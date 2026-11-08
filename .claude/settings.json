@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git show:*)",
+      "Bash(python3 -m py_compile:*)"
+    ],
+    "deny": [
+      "Read(~/repos/faculdade/ns-3.48/build/**)",
+      "Read(~/repos/faculdade/ns-3.48/cmake-cache/**)",
+      "Read(~/repos/faculdade/ns-3.48/.venv/**)",
+      "Read(~/repos/faculdade/ns-3.48/doc/**)",
+      "Read(~/repos/faculdade/ns-3.48/CHANGES.md)",
+      "Read(~/repos/faculdade/ns-3.48/RELEASE_NOTES.md)",
+      "Read(~/repos/faculdade/ns-3.48/second-*.pcap)",
+      "Read(**/*.pcap)",
+      "Read(**/__pycache__/**)",
+      "Read(**/.lock-*)"
+    ]
+  }
+}
