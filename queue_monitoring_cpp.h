@@ -130,9 +130,6 @@ struct QueueDiscMonitorState
     uint64_t dropsAfterDequeue = 0;
     uint64_t unmatchedDequeues = 0;
 
-    double totalDelaySeconds = 0.0;
-    double maxDelaySeconds = 0.0;
-    uint64_t measuredPackets = 0;
 };
 
 static std::map<uint32_t, QueueDiscMonitorState> g_queueDiscMonitors;
@@ -183,17 +180,6 @@ void QueueDiscDequeue(
     else
         state.currentBytes = 0;
 
-    // Custom measurement using the QueueDisc item's own enqueue timestamp.
-    double enqueueTime = item->GetTimeStamp().GetSeconds();
-    double delay = Simulator::Now().GetSeconds() - enqueueTime;
-
-    if (delay >= 0.0)
-    {
-        state.totalDelaySeconds += delay;
-        state.maxDelaySeconds =
-            std::max(state.maxDelaySeconds, delay);
-        ++state.measuredPackets;
-    }
 }
 
 
@@ -534,24 +520,3 @@ uint64_t GetQueueMeasuredPackets(uint32_t id)
     return g_queueMonitors[id].measuredPackets;
 }
 
-
-double GetQueueDiscAverageDelayMs(uint32_t id)
-{
-    const auto& state = g_queueDiscMonitors[id];
-
-    if (state.measuredPackets == 0)
-        return 0.0;
-
-    return state.totalDelaySeconds * 1000.0
-        / state.measuredPackets;
-}
-
-double GetQueueDiscMaxDelayMs(uint32_t id)
-{
-    return g_queueDiscMonitors[id].maxDelaySeconds * 1000.0;
-}
-
-uint64_t GetQueueDiscMeasuredPackets(uint32_t id)
-{
-    return g_queueDiscMonitors[id].measuredPackets;
-}

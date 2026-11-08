@@ -1,7 +1,7 @@
-
 from ns import ns
 import config
 from topology import create_topology
+from qos import install_qos
 from traffic import install_traffic
 from monitoring import (
     install_monitoring,
@@ -23,6 +23,7 @@ def main():
     print(scenario["description"])
 
     topology = create_topology()
+    install_qos(topology, config.QOS_MECHANISM)
 
     queue_monitors = install_queue_monitoring(topology)
     queue_disc_monitors = install_queue_disc_monitoring(topology)

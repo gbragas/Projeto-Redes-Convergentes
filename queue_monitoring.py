@@ -1,5 +1,5 @@
-
 from ns import ns
+import config
 
 
 # C++ callbacks track device-queue and QueueDisc events.
@@ -10,7 +10,6 @@ _cpp_header = Path(__file__).with_name("queue_monitoring_cpp.h")
 ns.cppyy.cppdef(_cpp_header.read_text())
 
 del _cpp_header
-
 
 
 # ============================================================
@@ -37,14 +36,19 @@ def _get_device_queue(device):
 
 def _get_queue_disc(device):
     try:
-        return _get_cpp().GetRootQueueDiscForPython(device)
+        queue_disc = _get_cpp().GetRootQueueDiscForPython(device)
+
+        if not queue_disc:
+            return None
+
+        return queue_disc
+
     except Exception:
         return None
 
 
 def _get_bottleneck_devices(topology):
     return topology["bottleneck_devices"]
-
 
 
 def _get_node_labels(topology):
@@ -100,20 +104,25 @@ def _get_link_label(device, topology):
     return f"{source} -> {destination}"
 
 
-# Install device-queue monitoring
+# ============================================================
+# Device queue monitoring installation
+# ============================================================
+
 def install_queue_monitoring(topology):
     cpp = _get_cpp()
     devices = _get_bottleneck_devices(topology)
 
-    print("\n" + "=" * 60)
-    print("INSTALLING DEVICE QUEUE MONITORS")
-    print("=" * 60)
+    if config.VERBOSE_MONITORING:
+        print("\n" + "=" * 60)
+        print("INSTALLING DEVICE QUEUE MONITORS")
+        print("=" * 60)
 
     for index in range(devices.GetN()):
         queue = _get_device_queue(devices.Get(index))
 
         if queue is None:
-            print(f"Device {index}: no device queue available")
+            if config.VERBOSE_MONITORING:
+                print(f"Device {index}: no device queue available")
             continue
 
         callbacks = {
@@ -127,29 +136,34 @@ def install_queue_monitoring(topology):
             if _connect_trace(queue, name, callback)
         ]
 
-        print(
-            f"Device {index}: device queue traces connected: "
-            f"{', '.join(connected) if connected else 'none'}"
-        )
+        if config.VERBOSE_MONITORING:
+            print(
+                f"Device {index}: device queue traces connected: "
+                f"{', '.join(connected) if connected else 'none'}"
+            )
 
-    # Preserve the interface expected by main.py.
     return topology
 
 
-# Install QueueDisc monitoring
+# ============================================================
+# QueueDisc monitoring installation
+# ============================================================
+
 def install_queue_disc_monitoring(topology):
     cpp = _get_cpp()
     devices = _get_bottleneck_devices(topology)
 
-    print("\n" + "=" * 60)
-    print("INSTALLING QUEUE DISC MONITORS")
-    print("=" * 60)
+    if config.VERBOSE_MONITORING:
+        print("\n" + "=" * 60)
+        print("INSTALLING QUEUE DISC MONITORS")
+        print("=" * 60)
 
     for index in range(devices.GetN()):
         queue_disc = _get_queue_disc(devices.Get(index))
 
         if queue_disc is None:
-            print(f"Device {index}: no root QueueDisc available")
+            if config.VERBOSE_MONITORING:
+                print(f"Device {index}: no root QueueDisc available")
             continue
 
         callbacks = {
@@ -169,15 +183,19 @@ def install_queue_disc_monitoring(topology):
             if _connect_trace(queue_disc, name, callback)
         ]
 
-        print(
-            f"Device {index}: QueueDisc traces connected: "
-            f"{', '.join(connected) if connected else 'none'}"
-        )
+        if config.VERBOSE_MONITORING:
+            print(
+                f"Device {index}: QueueDisc traces connected: "
+                f"{', '.join(connected) if connected else 'none'}"
+            )
 
     return topology
 
 
-# Print device-queue statistics
+# ============================================================
+# Device queue statistics
+# ============================================================
+
 def print_queue_statistics(queue_monitors):
     cpp = _get_cpp()
     devices = _get_bottleneck_devices(queue_monitors)
@@ -238,9 +256,12 @@ def print_queue_statistics(queue_monitors):
         print(f"ns-3 total drops:          {ns3_drops}")
         print(f"Unmatched dequeues:        {unmatched}")
         print(f"Occupancy consistent:      {consistent}")
-        
 
-# Print QueueDisc status
+
+# ============================================================
+# QueueDisc status
+# ============================================================
+
 def print_queue_disc_statistics(topology):
     cpp = _get_cpp()
     devices = _get_bottleneck_devices(topology)
@@ -255,7 +276,13 @@ def print_queue_disc_statistics(topology):
         queue_disc = _get_queue_disc(device)
 
         if queue_disc is None:
-            print(f"Device {index}: no root QueueDisc available")
+            print(f"\n{label}")
+            print("-" * 40)
+            print("QueueDisc:                 Not installed")
+            print("Capacity:                  N/A")
+            print("Current occupancy:         N/A")
+            print("Current queued bytes:      N/A")
+            print("Peak occupancy:            N/A")
             continue
 
         try:
@@ -280,8 +307,15 @@ def print_queue_disc_statistics(topology):
         print(f"Peak occupancy:           {peak} packets")
 
 
-# Print QueueDisc event statistics
+# ============================================================
+# Detailed QueueDisc event statistics
+# ============================================================
+
+
 def print_queue_disc_monitor_statistics(queue_disc_monitors, topology):
+    if not config.SHOW_QUEUE_DISC_STATISTICS:
+        return
+
     cpp = _get_cpp()
     devices = _get_bottleneck_devices(queue_disc_monitors)
 
@@ -290,9 +324,16 @@ def print_queue_disc_monitor_statistics(queue_disc_monitors, topology):
     print("=" * 60)
 
     for index in range(devices.GetN()):
-        queue_disc = _get_queue_disc(devices.Get(index))
+        device = devices.Get(index)
+        label = _get_link_label(device, topology)
+        queue_disc = _get_queue_disc(device)
 
         if queue_disc is None:
+            print(f"\n{label}")
+            print("-" * 40)
+            print("QueueDisc:                 Not installed")
+            print("QueueDisc event statistics: N/A")
+            print("QueueDisc sojourn time:    N/A")
             continue
 
         enqueues = int(cpp.GetQueueDiscEnqueues(index))
@@ -305,10 +346,6 @@ def print_queue_disc_monitor_statistics(queue_disc_monitors, topology):
 
         tracked_current = int(cpp.GetQueueDiscCurrent(index))
         tracked_bytes = int(cpp.GetQueueDiscCurrentBytes(index))
-
-        avg_delay = float(cpp.GetQueueDiscAverageDelayMs(index))
-        max_delay = float(cpp.GetQueueDiscMaxDelayMs(index))
-        measured = int(cpp.GetQueueDiscMeasuredPackets(index))
 
         builtin_avg = float(
             cpp.GetQueueDiscBuiltinAverageDelayMs(index)
@@ -338,11 +375,7 @@ def print_queue_disc_monitor_statistics(queue_disc_monitors, topology):
             and unmatched == 0
         )
 
-        device = devices.Get(index)
-        label = _get_link_label(device, topology)
-
         print(f"\n{label}")
-
         print("-" * 40)
         print(f"Enqueue events:            {enqueues}")
         print(f"Dequeue events:            {dequeues}")
@@ -358,30 +391,27 @@ def print_queue_disc_monitor_statistics(queue_disc_monitors, topology):
         print(f"Actual queued bytes:       {actual_bytes} bytes")
         print(f"Bytes match ns-3:          {bytes_match}")
         print(f"Internal accounting:       {consistent}")
-        print("CUSTOM DELAY MEASUREMENTS")
-        print(f"Samples:                  {measured}")
-        print(f"Average delay:            {avg_delay:.3f} ms")
-        print(f"Maximum delay:            {max_delay:.3f} ms")
 
         print("NS-3 BUILT-IN SOJOURN TIME")
-        print(f"Samples:                  {builtin_samples}")
-        print(f"Average delay:            {builtin_avg:.3f} ms")
-        print(f"Maximum delay:            {builtin_max:.3f} ms")
-
-        print("DELAY VALIDATION")
-        print(f"Sample counts match:      {measured == builtin_samples}")
-        print(
-            f"Average matches:          "
-            f"{abs(avg_delay - builtin_avg) < 0.001}"
-        )
-        print(
-            f"Maximum matches:          "
-            f"{abs(max_delay - builtin_max) < 0.001}"
-        )
+        if builtin_samples > 0:
+            print(f"Samples:                  {builtin_samples}")
+            print(f"Average delay:            {builtin_avg:.3f} ms")
+            print(f"Maximum delay:            {builtin_max:.3f} ms")
+        else:
+            print("Samples:                  0")
+            print("Average delay:            N/A")
+            print("Maximum delay:            N/A")
 
 
+
+# ============================================================
+# Detailed QueueDisc drop reasons
+# ============================================================
 
 def print_queue_disc_drop_reasons(topology):
+    if not config.VERBOSE_MONITORING:
+        return
+
     cpp = _get_cpp()
     devices = _get_bottleneck_devices(topology)
 
@@ -404,5 +434,3 @@ def print_queue_disc_drop_reasons(topology):
             continue
 
         cpp.PrintQueueDiscDropStats(queue_disc, "root")
-
-
