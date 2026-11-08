@@ -2,7 +2,7 @@
 
 Projeto acadêmico desenvolvido no **ns-3.48** (scripts em Python com bindings `cppyy` e trechos em C++) para avaliar como diferentes mecanismos de **Qualidade de Serviço (QoS)** se comportam em uma rede com um enlace gargalo, sob três níveis de carga.
 
-Este documento reúne **tudo o que é necessário para escrever o relatório sem executar novamente as simulações**: a topologia, o tráfego, os mecanismos de QoS, a metodologia, as métricas, os resultados completos, a análise e as limitações. Os dados brutos ficam em [`results/`](results/).
+Este documento reúne **todos os resultados obtidos com as simulações**: a topologia, o tráfego, os mecanismos de QoS, a metodologia, as métricas, os resultados completos, a análise e as limitações. Os dados brutos ficam em [`results/`](results/) **(não é necessário executar novamente as simulações)**.
 
 ---
 
