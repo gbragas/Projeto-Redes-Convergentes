@@ -1,0 +1,12 @@
+version: '3.8'
+
+services:
+  ns3-sim:
+    build: .
+    container_name: redes-convergentes-ns3
+    volumes:
+      # Espelha o diretório atual (seus scripts .py e .h) para dentro do scratch do ns-3
+      - ./:/usr/ns3/ns-allinone-3.48/ns-3.48/scratch/network-qos
+    working_dir: /usr/ns3/ns-allinone-3.48/ns-3.48
+    # Ao subir o compose, ele executa o main.py (ajuste se o arquivo principal for outro)
+    command: ./ns3 run scratch/network-qos/main.py
