@@ -1,0 +1,102 @@
+Load scenario: medium
+Medium network load
+Topology created successfully.
+QoS mechanism: baseline
+Priority Queuing: disabled
+voice [voice]: client0 -> server0 (UDP, 128Kbps, 160 bytes)
+data [data]: client1 -> server1 (TCP, 4Mbps, 1024 bytes)
+video [video]: client2 -> server0 (UDP, 4Mbps, 1200 bytes)
+iot [iot]: client0 -> server1 (UDP, 256Kbps, 100 bytes)
+
+--- Simulation Results ---
+voice received: 111840 bytes
+data received: 3475456 bytes
+video received: 3499200 bytes
+iot received: 223900 bytes
+
+========================================================================================================================
+FLOWMONITOR — QoS STATISTICS
+========================================================================================================================
+ID   Profile      Flow                                        Tx      Rx    Lost      Throughput          Delay         Jitter
+------------------------------------------------------------------------------------------------------------------------------
+1    data         TCP | Client 1 -> Server 1                6783    6783       0       4.345 Mbps     25.918 ms      0.469 ms
+2    video        UDP | Client 2 -> Server 0                2916    2916       0       4.095 Mbps     26.130 ms      0.267 ms
+3    iot          UDP | Client 0 -> Server 1                2239    2239       0       0.328 Mbps     25.437 ms      0.563 ms
+4    voice        UDP | Client 0 -> Server 0                 699     699       0       0.151 Mbps     25.467 ms      0.500 ms
+5    data (ACK)   TCP | Server 1 -> Client 1                3392    3392       0       0.202 Mbps     24.052 ms      0.000 ms
+========================================================================================================================
+Throughput: Mbps | Delay and jitter: milliseconds
+
+============================================================
+DEVICE QUEUE STATISTICS
+============================================================
+
+R0 -> R1
+----------------------------------------
+Capacity:                 100 packets
+Tracked occupancy:        0 packets
+ns-3 occupancy:           0 packets
+Peak occupancy:           60 packets
+Enqueue events:            12637
+Dequeue events:            12637
+Drop events:               0
+Measured delay samples:   12637
+Average queue delay:      1.247 ms
+Maximum queue delay:      29.002 ms
+ns-3 total drops:          0
+Unmatched dequeues:        0
+Occupancy consistent:      True
+
+R1 -> R0
+----------------------------------------
+Capacity:                 100 packets
+Tracked occupancy:        0 packets
+ns-3 occupancy:           0 packets
+Peak occupancy:           1 packets
+Enqueue events:            3392
+Dequeue events:            3392
+Drop events:               0
+Measured delay samples:   3392
+Average queue delay:      0.000 ms
+Maximum queue delay:      0.039 ms
+ns-3 total drops:          0
+Unmatched dequeues:        0
+Occupancy consistent:      True
+
+============================================================
+QUEUE DISC STATUS
+============================================================
+
+R0 -> R1
+----------------------------------------
+QueueDisc:                 Not installed
+Capacity:                  N/A
+Current occupancy:         N/A
+Current queued bytes:      N/A
+Peak occupancy:            N/A
+
+R1 -> R0
+----------------------------------------
+QueueDisc:                 Not installed
+Capacity:                  N/A
+Current occupancy:         N/A
+Current queued bytes:      N/A
+Peak occupancy:            N/A
+
+============================================================
+QUEUE DISC EVENT STATISTICS
+============================================================
+
+R0 -> R1
+----------------------------------------
+QueueDisc:                 Not installed
+QueueDisc event statistics: N/A
+QueueDisc sojourn time:    N/A
+
+R1 -> R0
+----------------------------------------
+QueueDisc:                 Not installed
+QueueDisc event statistics: N/A
+QueueDisc sojourn time:    N/A
+
+Simulation finished.

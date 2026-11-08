@@ -1,5 +1,6 @@
 from ns import ns
 import config
+from qos import get_profile_tos
 
 
 def install_traffic(topology):
@@ -117,6 +118,10 @@ def install_traffic(topology):
             )
         )
 
+        # ToS marking used by Priority Queuing to select the band.
+        tos = get_profile_tos(profile)
+        sender_helper.SetAttribute("Tos", ns.UintegerValue(tos))
+
         sender_app = sender_helper.Install(source)
         sender_app.Start(ns.Seconds(2.0))
         sender_app.Stop(
@@ -128,7 +133,9 @@ def install_traffic(topology):
         print(
             f"{name} [{profile}]: "
             f"{source_name} -> {destination_name} "
-            f"({protocol}, {flow['rate']}, {packet_size} bytes)"
+            f"({protocol}, {flow['rate']}, {packet_size} bytes"
+            + (f", ToS 0x{tos:02x}" if config.PRIORITY_QUEUING_ENABLED else "")
+            + ")"
         )
 
     return sinks

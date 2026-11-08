@@ -1,4 +1,5 @@
 from ns import ns
+import config
 
 
 def install_monitoring():
@@ -6,6 +7,31 @@ def install_monitoring():
     monitor = flow_monitor_helper.InstallAll()
 
     return flow_monitor_helper, monitor
+
+
+def _build_profile_lookup():
+    """Map (protocol, port) of each configured flow to its traffic profile."""
+    return {
+        (flow["protocol"].upper(), flow["port"]): flow["profile"]
+        for flow in config.TRAFFIC_FLOWS
+    }
+
+
+def _get_flow_profile(protocol, flow, profiles):
+    """Traffic profile of a FlowMonitor flow.
+
+    Forward flows match on the destination port. Reverse flows (e.g. TCP
+    ACKs from the server) match on the source port and are marked "(ACK)".
+    """
+    profile = profiles.get((protocol, int(flow.destinationPort)))
+    if profile is not None:
+        return profile
+
+    profile = profiles.get((protocol, int(flow.sourcePort)))
+    if profile is not None:
+        return f"{profile} (ACK)"
+
+    return "unknown"
 
 
 def print_flow_statistics(flow_monitor_helper, monitor, topology):
@@ -24,12 +50,14 @@ def print_flow_statistics(flow_monitor_helper, monitor, topology):
     for i, ip_address in enumerate(topology["server_ips"]):
         node_names[str(ip_address)] = f"Server {i}"
 
+    profiles = _build_profile_lookup()
+
     print("\n" + "=" * 120)
     print("FLOWMONITOR — QoS STATISTICS")
     print("=" * 120)
 
     header = (
-        f"{'ID':<4} {'Flow':<38} "
+        f"{'ID':<4} {'Profile':<12} {'Flow':<38} "
         f"{'Tx':>7} {'Rx':>7} {'Lost':>7} "
         f"{'Throughput':>15} {'Delay':>14} {'Jitter':>14}"
     )
@@ -55,6 +83,7 @@ def print_flow_statistics(flow_monitor_helper, monitor, topology):
             protocol = f"Protocol {protocol_number}"
 
         label = f"{protocol} | {src_name} -> {dst_name}"
+        profile = _get_flow_profile(protocol, flow, profiles)
 
         # Throughput is calculated over the first-to-last received packet.
         first_rx = stats.timeFirstRxPacket.GetSeconds()
@@ -81,7 +110,7 @@ def print_flow_statistics(flow_monitor_helper, monitor, topology):
 
         calculated_lost = stats.txPackets - stats.rxPackets
         print(
-            f"{flow_id:<4} {label:<38} "
+            f"{flow_id:<4} {profile:<12} {label:<38} "
             f"{stats.txPackets:>7} {stats.rxPackets:>7} "
             f"{stats.lostPackets:>7} "
             f"{throughput_mbps:>11.3f} Mbps "

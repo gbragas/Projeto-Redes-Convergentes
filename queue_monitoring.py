@@ -290,10 +290,9 @@ def print_queue_disc_statistics(topology):
         except Exception:
             name = "Unknown QueueDisc"
 
-        try:
-            capacity = int(queue_disc.GetMaxSize().GetValue())
-        except Exception:
-            capacity = -1
+        # PrioQueueDisc has no size limit of its own (GetMaxSize aborts),
+        # so the helper sums the capacity of its bands.
+        capacity = int(cpp.GetQueueDiscCapacityPackets(queue_disc))
 
         current = int(cpp.GetQueueDiscCurrent(index))
         current_bytes = int(cpp.GetQueueDiscCurrentBytes(index))
