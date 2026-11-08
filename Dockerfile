@@ -1,14 +1,17 @@
-# Usa o Ubuntu 22.04 como base (estável e compatível com ns-3)
+
+# Use Ubuntu 22.04 as the base image
 FROM ubuntu:22.04
 
-# Evita prompts interativos durante a instalação do apt
+# Avoid interactive prompts during package installation
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Atualiza os pacotes e instala as dependências necessárias para o ns-3.48
+# Install NS-3 build dependencies
 RUN apt-get update && apt-get install -y \
     g++ \
     python3 \
     python3-dev \
+    python3-pip \
+    python3-venv \
     pkg-config \
     sqlite3 \
     cmake \
@@ -19,26 +22,40 @@ RUN apt-get update && apt-get install -y \
     wget \
     && rm -rf /var/lib/apt/lists/*
 
-# Define o diretório de trabalho
+# Create a Python virtual environment
+RUN python3 -m venv /opt/ns3-venv
+
+ENV PATH="/opt/ns3-venv/bin:${PATH}"
+ENV Python3_EXECUTABLE="/opt/ns3-venv/bin/python3"
+
+# Install CMake and Cppyy for NS-3
+RUN python3 -m pip install --no-cache-dir \
+    cmake==3.31.6 \
+    cppyy==3.1.2
+
+# Define the working directory
 WORKDIR /usr/ns3
 
-# Baixa e extrai o ns-allinone-3.48
+# Download and extract NS-3.48
 RUN wget https://www.nsnam.org/releases/ns-allinone-3.48.tar.bz2 && \
     tar -xjf ns-allinone-3.48.tar.bz2 && \
     rm ns-allinone-3.48.tar.bz2
 
-# Entra na pasta do ns-3.48
+# Enter the NS-3.48 directory
 WORKDIR /usr/ns3/ns-allinone-3.48/ns-3.48
 
-
-# Configura o ns-3 desativando exemplos e testes, 
-# e limita o build para usar no máximo 2 processos simultâneos (-j 2)
-RUN ./ns3 configure --build-profile=optimized --disable-examples --disable-tests && \
+# Configure and build NS-3 with Python bindings
+RUN ./ns3 configure \
+    --build-profile=optimized \
+    --enable-python-bindings \
+    --disable-examples \
+    --disable-tests \
+    --disable-modules="lorawan;netsimulyzer" && \
     ./ns3 build -j 2
 
-# Cria a pasta network-qos dentro do scratch
+# Create the project directory
 RUN mkdir -p scratch/network-qos
 
-# O comando padrão ao rodar o container será abrir o bash
+# Start a Bash shell by default
 CMD ["/bin/bash"]
 
